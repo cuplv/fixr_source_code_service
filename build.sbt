@@ -8,5 +8,9 @@ lazy val root = (project in file(".")).
       version      := "0.0.1"
     )),
     name := "fixr_source_code_service",
-    libraryDependencies += scalaTest % Test
+    resolvers += "Maven ops4j" at "http://repository.ops4j.org/maven2",
+    libraryDependencies += scalaTest % Test,
+    libraryDependencies += spooncore % Compile,
+    libraryDependencies += logging_backend % Compile,
+    libraryDependencies += logging % Compile
   )
