@@ -15,4 +15,16 @@ class TestParser extends FlatSpec with Matchers {
   }"""
     res should be (Option(resString))
   }
+
+  "The text extractor" should  "extract the innerclass method" in {
+    val res = SourceExtractor.extractText(file, 387, 496)
+    val resString = """@Override
+      public void innerClassMethod() {
+        int i = 0;
+        i = i + 1;
+        return;
+      }"""
+    res should be (Option(resString))
+  }
+
 }
