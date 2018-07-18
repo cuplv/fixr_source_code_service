@@ -5,29 +5,34 @@ import spoon.reflect.factory.Factory
 import spoon.processing.ProcessingManager
 import spoon.support.QueueProcessingManager
 
+import edu.colorado.plv.fixr.storage.SourceCodeMap
 
-
-class ClassParser {
-  lazy val launcher : Launcher = new Launcher()
-}
 
 object ClassParser {
-  def parseClassFile(parser : ClassParser) : ClassParser = {
-    val args1 = Array("-i", "/Users/sergiomover/works/projects/muse/repos/fixr_source_code_service/src/test/resources/TestMainClass.java", "-o", "/tmp/cavallo")
 
-    parser.launcher.setArgs(args1)
-    parser.launcher.buildModel()
+  /**
+    * Parse a java file and extract its methods source code
+    * (stored in sourceCodeMap)
+   */
+  def parseClassFile(sourceCodeMap : SourceCodeMap, inputFileName : String) : Unit = {
+    lazy val launcher : Launcher = new Launcher()
 
-    val factory : Factory = parser.launcher.getFactory()
+    val args1 = Array("-i", inputFileName)
+
+    launcher.setArgs(args1)
+    launcher.buildModel()
+
+    val factory : Factory = launcher.getFactory()
     val processingManager : ProcessingManager = new QueueProcessingManager(factory)
 
-    val method_processor = new MethodProcessor()
+    val method_processor = new MethodProcessor(sourceCodeMap)
     processingManager.addProcessor(method_processor)
+
+    val constructor_processor = new ConstructorProcessor(sourceCodeMap)
+    processingManager.addProcessor(constructor_processor)
 
     processingManager.process(factory.Class().getAll())
 
-    parser.launcher.process()
-
-    parser
+    launcher.process()
   }
 }

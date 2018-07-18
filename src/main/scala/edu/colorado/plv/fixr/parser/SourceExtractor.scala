@@ -8,6 +8,10 @@ import edu.colorado.plv.fixr.Logger
 
 object SourceExtractor {
 
+  /**
+    * Extract the text from methodFile from position
+    * startPosition to position endPosition
+    */
   def extractText(methodFile : File,
     startPosition : Int,
     endPosition : Int) : Option[String] = {

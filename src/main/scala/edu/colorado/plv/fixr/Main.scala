@@ -1,9 +1,9 @@
 package edu.colorado.plv.fixr
 
-object Hello extends Greeting with App {
-  println(greeting)
+import edu.colorado.plv.fixr.parser.ClassParser
+import edu.colorado.plv.fixr.storage.MemoryMap
+
+object Main extends App {
+
 }
 
-trait Greeting {
-  lazy val greeting: String = "hello"
-}

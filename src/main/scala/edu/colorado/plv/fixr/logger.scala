@@ -10,4 +10,7 @@ object Logger {
 
   def error(message : String) : Unit = logger.error(message)
   def error(message : String, args: Any*) : Unit = logger.error(message, args)
+
+  def warn(message : String) : Unit = logger.warn(message)
+  def warn(message : String, args: Any*) : Unit = logger.warn(message, args)
 }
