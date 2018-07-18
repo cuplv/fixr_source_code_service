@@ -3,7 +3,7 @@ package edu.colorado.plv.fixr.parser
 import org.scalatest._
 import java.io.File
 
-class TestParser extends FlatSpec with Matchers {
+class TestExtractor extends FlatSpec with Matchers {
 
   val url = getClass.getResource("/TestMainClass.java")
   val file = new File(url.toURI())
@@ -26,5 +26,4 @@ class TestParser extends FlatSpec with Matchers {
       }"""
     res should be (Option(resString))
   }
-
 }

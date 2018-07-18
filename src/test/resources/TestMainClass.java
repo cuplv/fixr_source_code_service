@@ -45,6 +45,9 @@ public class TestMainClass {
   }
 
   class InnerClass2 {
+    public InnerClass2() {
+    }
+
     public void innerClass2Method() {
     }
   }
