@@ -11,5 +11,6 @@ case class MethodKey(declaringFile : String,
 trait SourceCodeMap {
   def insertMethod(key : MethodKey, methodText : String) : Unit
   def lookupMethod(key : MethodKey) : Option[String]
+  def clear() : Unit
 }
 

@@ -14,4 +14,8 @@ class MemoryMap extends SourceCodeMap {
     map.get(key)
   }
 
+
+  def clear() : Unit = {
+    map.clear()
+  }
 }

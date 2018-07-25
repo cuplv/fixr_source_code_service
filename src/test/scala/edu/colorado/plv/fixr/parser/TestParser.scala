@@ -9,18 +9,17 @@ import edu.colorado.plv.fixr.storage.{MethodKey, MemoryMap}
 class TestParser extends FlatSpec with Matchers with BeforeAndAfter {
 
   val dstFile = new File("TestMainClass.java")
+  val sourceCodeMap = new MemoryMap()
 
   "The source parser" should  "extract the main method" in {
-    val sourceCodeMap = new MemoryMap()
-
-    ClassParser.parseClassFile(sourceCodeMap, dstFile.getPath())
-
     val keyMain = MethodKey("TestMainClass.java",5,"main(java.lang.String[])")
     val mainMethod = """public static void main(String[] args) {
 
   }"""
     sourceCodeMap.lookupMethod(keyMain) should be (Option(mainMethod))
+  }
 
+  "The source parser" should  "find a method of an inner class" in {
     val keyInner2 = MethodKey("TestMainClass.java",32,"innerClass2Method()")
     val inner2Method = """@Override
       public void innerClass2Method() {
@@ -29,7 +28,9 @@ class TestParser extends FlatSpec with Matchers with BeforeAndAfter {
         return;
       }"""
     sourceCodeMap.lookupMethod(keyInner2) should be (Option(inner2Method))
+  }
 
+  "The source parser" should  "extract the constructor of an inner class" in {
     val keyConstructor = MethodKey("TestMainClass.java",48,"simple.TestMainClass$InnerClass2()")
     val constructorMethod = """public InnerClass2() {
     }"""
@@ -41,6 +42,9 @@ class TestParser extends FlatSpec with Matchers with BeforeAndAfter {
     val file = new File(url.toURI())
 
     Files.copy(file.toPath(), dstFile.toPath())
+
+    sourceCodeMap.clear()
+    ClassParser.parseClassFile(sourceCodeMap, dstFile.getPath())
   }
 
   after {
