@@ -12,5 +12,7 @@ lazy val root = (project in file(".")).
     libraryDependencies += scalaTest % Test,
     libraryDependencies += spooncore % Compile,
     libraryDependencies += logging_backend % Compile,
-    libraryDependencies += logging % Compile
+    libraryDependencies += logging % Compile,
+    libraryDependencies += eclipseJgit % Compile,
+    libraryDependencies += google_commons % Compile
   )
