@@ -7,6 +7,7 @@ import com.google.common.io.Files
 import org.eclipse.jgit.api.{Git, CloneCommand}
 import org.eclipse.jgit.lib.Repository
 import org.eclipse.jgit.treewalk.{TreeWalk, FileTreeIterator}
+import org.eclipse.jgit.treewalk.filter.TreeFilter
 
 import edu.colorado.plv.fixr.Logger
 
@@ -59,6 +60,7 @@ object GitHelper {
     * @warn Not thread safe for treeWalk
     */
   def foldLeftRepoFile[B](repoOpened : RepoOpened,
+    treeFilter : Option[TreeFilter],
     accumulator: B,
     op: ((B, String) => B)) : B = {
 
@@ -67,7 +69,12 @@ object GitHelper {
 
     treeWalk.addTree(new FileTreeIterator(repo))
 
-    GitHelper.foldLeftRepoFile(treeWalk,
+    treeFilter match {
+      case  Some(filter) => treeWalk.setFilter(filter)
+      case None => ()
+    }
+
+    GitHelper.foldLeftTreeWalk(treeWalk,
       accumulator,
       op)
   }
@@ -77,11 +84,11 @@ object GitHelper {
     *
     * @warn Not thread safe for treeWalk
     */
-  private def foldLeftRepoFile[B](treeWalk : TreeWalk,
+  private def foldLeftTreeWalk[B](treeWalk : TreeWalk,
     accumulator: B,
     op: ((B, String) => B)) : B = {
     if (treeWalk.next()) {
-      foldLeftRepoFile(treeWalk, op(accumulator, treeWalk.getPathString), op)
+      foldLeftTreeWalk(treeWalk, op(accumulator, treeWalk.getPathString), op)
     }
     else {
       treeWalk.reset()
