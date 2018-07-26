@@ -10,7 +10,7 @@ trait JsonSupport extends SprayJsonSupport {
   // import the default encoders for primitive types (Int, String, Lists etc)
   import DefaultJsonProtocol._
 
-  implicit val findMethodsSrcJsonFormat = jsonFormat3(FindMethodSrc)
+  implicit val findMethodsSrcJsonFormat = jsonFormat5(FindMethodSrc)
   implicit val methodSrcJsonFormat = jsonFormat2(MethodSrcReply)
 }
 

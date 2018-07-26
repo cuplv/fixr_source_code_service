@@ -24,7 +24,8 @@ class TestSrcFetcherRoutes
 
   "SrcFetcherRoutes" should {
     "return no method exists" in {
-      val findMethodSrc = FindMethodSrc("",1, "")
+      val findMethodSrc = FindMethodSrc("", "",
+        "", 1, "")
       val entity = Marshal(findMethodSrc).to[MessageEntity].futureValue
 
       val request = HttpRequest(uri = "/src").withEntity(entity)
@@ -34,7 +35,7 @@ class TestSrcFetcherRoutes
 
         contentType should ===(ContentTypes.`application/json`)
 
-        responseAs[MethodSrcReply] ===(MethodSrcReply("","NotImplemented"))
+        responseAs[MethodSrcReply] ===(MethodSrcReply("","Cannot find the source code"))
       }
     }
   }
