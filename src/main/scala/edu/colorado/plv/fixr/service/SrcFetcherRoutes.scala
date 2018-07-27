@@ -17,7 +17,6 @@ import scala.concurrent.Future
 import akka.pattern.ask
 import akka.util.Timeout
 
-
 trait SrcFetcherRoutes extends JsonSupport {
   import SrcFetcherActor._
 
@@ -28,7 +27,7 @@ trait SrcFetcherRoutes extends JsonSupport {
   def srcFetcherActor: ActorRef
 
   // TODO: set the timeout via config file
-  implicit lazy val timeout = Timeout(5.seconds)
+  implicit lazy val timeout = Timeout(60.seconds)
 
   lazy val srcFetcherRoutes: Route = 
     path("src") {

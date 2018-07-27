@@ -1,11 +1,13 @@
 package edu.colorado.plv.fixr.github
 
-import java.io.File
+import java.io.{File, InputStream}
 import java.nio.file.{Path, Paths}
 import com.google.common.io.Files
 
+import scala.annotation.tailrec
+
 import org.eclipse.jgit.api.{Git, CloneCommand}
-import org.eclipse.jgit.lib.Repository
+import org.eclipse.jgit.lib.{Repository, ObjectReader, ObjectId}
 import org.eclipse.jgit.treewalk.{TreeWalk, FileTreeIterator}
 import org.eclipse.jgit.treewalk.filter.TreeFilter
 
@@ -45,7 +47,7 @@ object GitHelper {
       Some(RepoOpened(git, repoClosed.repoUri, repoClosed.commitHash))
 
     } catch {
-      case e : IllegalStateException => 
+      case e : IllegalStateException =>
         Logger.debug("Error creating the temporary directory")
         None
       case e : Exception =>
@@ -62,9 +64,10 @@ object GitHelper {
   def foldLeftRepoFile[B](repoOpened : RepoOpened,
     treeFilter : Option[TreeFilter],
     accumulator: B,
-    op: ((B, String) => B)) : B = {
+    op: ((B, (InputStream, String)) => B)) : B = {
 
     val repo = repoOpened.git.checkout.getRepository()
+    //val repo = repoOpened.git.getRepository()
     val treeWalk = new TreeWalk(repo)
 
     treeWalk.addTree(new FileTreeIterator(repo))
@@ -74,9 +77,17 @@ object GitHelper {
       case None => ()
     }
 
-    GitHelper.foldLeftTreeWalk(treeWalk,
-      accumulator,
-      op)
+    val reader = repo.newObjectReader()
+    try {
+      GitHelper.foldLeftTreeWalk(treeWalk,
+        reader,
+        accumulator,
+        op)
+    }
+    finally {
+      reader.close
+      treeWalk.close
+    }
   }
 
   /**
@@ -84,11 +95,42 @@ object GitHelper {
     *
     * @warn Not thread safe for treeWalk
     */
+  @tailrec
   private def foldLeftTreeWalk[B](treeWalk : TreeWalk,
+    reader : ObjectReader,
     accumulator: B,
-    op: ((B, String) => B)) : B = {
+    op: ((B, (InputStream, String)) => B)) : B = {
     if (treeWalk.next()) {
-      foldLeftTreeWalk(treeWalk, op(accumulator, treeWalk.getPathString), op)
+      if (treeWalk.isSubtree()) {
+        treeWalk.enterSubtree();
+        foldLeftTreeWalk(treeWalk,
+          reader,
+          accumulator,
+          op)
+      }
+      else {
+        val objId = treeWalk.getObjectId(treeWalk.getTreeCount - 1)
+
+        if (objId == ObjectId.zeroId()) {
+          Logger.warn(s"Cannot find object for ${treeWalk.getPathString()}")
+
+          foldLeftTreeWalk(treeWalk,
+            reader,
+            accumulator,
+            op)
+        }
+        else {
+          Logger.debug(s"Processing git object ${treeWalk.getPathString()}")
+
+          val objectLoader = reader.open(objId)
+          val inputStream = objectLoader.openStream()
+
+          foldLeftTreeWalk(treeWalk,
+            reader,
+            op(accumulator, (inputStream, treeWalk.getPathString())),
+            op)
+        }
+      }
     }
     else {
       treeWalk.reset()
@@ -101,7 +143,12 @@ object GitHelper {
     */
   def closeRepo(repoOpened : RepoOpened) : Option[RepoClosed] = {
     val closed = RepoClosed(repoOpened.repoUri, repoOpened.commitHash);
+    val repoDir = repoOpened.git.getRepository.getDirectory
+
     repoOpened.git.close()
+
+    repoDir.delete
+
     return Some(closed)
   }
 

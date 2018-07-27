@@ -40,6 +40,8 @@ object CtExecutableProcessor {
     val sourcePosition = executable_decl.getPosition
     val startLine = sourcePosition.getLine
 
+    Logger.debug(s"Processing method $signature at line $startLine...")
+
     if (startLine > 0) {
       val methodFile = sourcePosition.getFile
       val fileName = methodFile.getName

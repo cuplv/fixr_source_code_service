@@ -1,7 +1,7 @@
 package edu.colorado.plv.fixr.git
 
 import org.scalatest._
-import java.io.File
+import java.io.{File, InputStream}
 import java.nio.file.Files
 
 import org.eclipse.jgit.treewalk.filter.PathSuffixFilter
@@ -38,12 +38,17 @@ class TestGit extends FlatSpec with Matchers with BeforeAndAfter {
           GitHelper.foldLeftRepoFile(openedRepo,
             None,
             List[String](),
-            ((acc : List[String], filePath : String) => {
-              if (filePath.endsWith("Scala.gitignore")) {
-                filePath :: acc
-              }
-              else {
-                acc
+            ((acc : List[String], res : (InputStream, String)) => {
+              res match {
+                case (fileStream, fileName) => {
+                  if (fileName.endsWith("Scala.gitignore")) {
+                    fileName :: acc
+                  }
+                  else {
+                    acc
+                  }
+                }
+                case _ => acc
               }
             }))
 
@@ -71,8 +76,10 @@ class TestGit extends FlatSpec with Matchers with BeforeAndAfter {
           GitHelper.foldLeftRepoFile(openedRepo,
             Some(PathSuffixFilter.create("yml")),
             List[String](),
-            ((acc : List[String], filePath : String) => {
-              filePath :: acc
+            ((acc : List[String], res : (InputStream, String)) => {
+              res match {
+                case (_, fileName) => fileName :: acc
+              }
             }))
 
         GitHelper.closeRepo(openedRepo)
