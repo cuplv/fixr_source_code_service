@@ -9,3 +9,16 @@ The input of the services are:
 - commit_hash: the hash of the commits
 - class_name: the name of the Java class containing the method (with the package name)
 - method_signature: the signature of the method to retreive
+
+# Deployment
+
+Create the deployment package:
+
+```
+$> sbt stage
+```
+
+Run the binary with the production configuration:
+```
+$> ./target/universal/stage/bin/fixr_source_code_service -Dconfig.file="/production_conf/application.conf"
+```
