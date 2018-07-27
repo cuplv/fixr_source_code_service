@@ -59,7 +59,7 @@ object GitHelper {
   /**
     * FoldLeft on the list of files in the repository.
     *
-    * @warn Not thread safe for treeWalk
+    * Not thread safe for treeWalk
     */
   def foldLeftRepoFile[B](repoOpened : RepoOpened,
     treeFilter : Option[TreeFilter],

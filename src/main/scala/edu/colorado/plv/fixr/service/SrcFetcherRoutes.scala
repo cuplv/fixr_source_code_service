@@ -12,6 +12,7 @@ import akka.http.scaladsl.server.directives.MethodDirectives.get
 import akka.http.scaladsl.server.directives.MethodDirectives.post
 import akka.http.scaladsl.server.directives.RouteDirectives.complete
 import akka.http.scaladsl.server.directives.PathDirectives.path
+import com.typesafe.config.{Config, ConfigFactory}
 
 import scala.concurrent.Future
 import akka.pattern.ask
@@ -27,6 +28,7 @@ trait SrcFetcherRoutes extends JsonSupport {
   def srcFetcherActor: ActorRef
 
   // TODO: set the timeout via config file
+  //lazy val timeout = ConfigFactory.load().getDuration("akka.http.server.request-timeout") // Timeout(60.seconds)
   implicit lazy val timeout = Timeout(60.seconds)
 
   lazy val srcFetcherRoutes: Route = 
