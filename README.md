@@ -22,3 +22,11 @@ Run the binary with the production configuration:
 ```
 $> ./target/universal/stage/bin/fixr_source_code_service -Dconfig.file="/production_conf/application.conf"
 ```
+
+# Docker container
+
+```
+$> cd docker
+$> docker image build -t fixr_source_code_service  .
+$> docker run -p 8080:8080 -d fixr_source_code_service
+```
