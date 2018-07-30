@@ -4,16 +4,21 @@ import scala.collection.mutable.HashMap;
 
 class MemoryMap extends SourceCodeMap {
 
-  val map : HashMap[MethodKey, String] = new HashMap[MethodKey, String]()
+  val map : HashMap[MethodKey, Set[String]] =
+    new HashMap[MethodKey, Set[String]]()
 
   def insertMethod(key : MethodKey, methodText : String) : Unit = {
-    map.update(key, methodText)
+    if (map.contains(key)) {
+      val keySet = map(key)
+      map.update(key, keySet + methodText)
+    } else {
+      map.update(key, Set(methodText))
+    }
   }
 
-  def lookupMethod(key : MethodKey) : Option[String] = {
+  def lookupMethod(key : MethodKey) : Option[Set[String]] = {
     map.get(key)
   }
-
 
   def clear() : Unit = {
     map.clear()

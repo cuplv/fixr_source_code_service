@@ -14,10 +14,10 @@ class SrcFinder(sourceCodeMap : SourceCodeMap)  {
 
   def lookupMethod(github_url : String,
     commit_id : String,
-    methodKey : MethodKey) : Option[String] = {
+    methodKey : MethodKey) : Option[Set[String]] = {
 
     sourceCodeMap.lookupMethod(methodKey) match {
-      case Some(sourceCode) => Some(sourceCode)
+      case Some(sourceCodeSet) => Some(sourceCodeSet)
       case None => {
         val closedRepo = RepoClosed(github_url, commit_id)
         GitHelper.openRepo(closedRepo) match {
@@ -49,7 +49,9 @@ class SrcFinder(sourceCodeMap : SourceCodeMap)  {
                       Files.copy(inputStream, fileToWrite.toPath(),
                         StandardCopyOption.REPLACE_EXISTING)
 
-                      ClassParser.parseClassFile(sourceCodeMap,
+                      ClassParser.parseClassFile(
+                        github_url,
+                        sourceCodeMap,
                         fileToWrite.getPath)
                     } finally {
                       fileToWrite.delete

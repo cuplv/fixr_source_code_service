@@ -8,25 +8,25 @@ import edu.colorado.plv.fixr.Logger
 import edu.colorado.plv.fixr.storage.{MethodKey, SourceCodeMap}
 
 
-class MethodProcessor(sourceCodeMap : SourceCodeMap)
+class MethodProcessor(gitHubUrl : String, sourceCodeMap : SourceCodeMap)
     extends AbstractProcessor[CtMethod[_]] {
 
   /**
     * Method called to process a single CtMethod node in the AST
     */
   def process(method_decl : CtMethod[_]) : Unit = {
-    CtExecutableProcessor.process(sourceCodeMap, method_decl)
+    CtExecutableProcessor.process(gitHubUrl, sourceCodeMap, method_decl)
   }
 }
 
-class ConstructorProcessor(sourceCodeMap : SourceCodeMap)
+class ConstructorProcessor(gitHubUrl: String, sourceCodeMap : SourceCodeMap)
     extends AbstractProcessor[CtConstructor[_]] {
 
   /**
     * Method called to process a single CtConstructor node in the AST
     */
   def process(method_decl : CtConstructor[_]) : Unit = {
-    CtExecutableProcessor.process(sourceCodeMap, method_decl)
+    CtExecutableProcessor.process(gitHubUrl, sourceCodeMap, method_decl)
   }
 }
 
@@ -35,12 +35,14 @@ object CtExecutableProcessor {
   /**
     * Helper method used to process a CtExecutable node.
     */
-  def process(sourceCodeMap : SourceCodeMap, executable_decl : CtExecutable[_]) = {
-    val signature = executable_decl.getSignature()
+  def process(gitHubUrl : String, sourceCodeMap : SourceCodeMap,
+    executable_decl : CtExecutable[_]) = {
+    var simpleName = executable_decl.getSimpleName
+    val signature = executable_decl.getSignature
     val sourcePosition = executable_decl.getPosition
     val startLine = sourcePosition.getLine
 
-    Logger.debug(s"Processing method $signature at line $startLine...")
+    Logger.debug(s"Processing method $simpleName ($signature) at line $startLine...")
 
     if (startLine > 0) {
       val methodFile = sourcePosition.getFile
@@ -53,18 +55,18 @@ object CtExecutableProcessor {
 
       methodTextOption match {
         case Some(methodText) => {
-          Logger.debug(s"Insert method: $signature\n" +
+          Logger.debug(s"Insert method: $simpleName\n" +
             s"\tFrom file: $fileName\n" +
             s"\tStart line: $startLine\n" +
             s"\tSource start: $sourceStart\n" +
             s"\tSource end: $sourceEnd"
           )
 
-          sourceCodeMap.insertMethod(new MethodKey(fileName, startLine, signature),
+          sourceCodeMap.insertMethod(new MethodKey(gitHubUrl,fileName, startLine, simpleName),
             methodText)
         }
         case _ => {
-          Logger.warn(s"Cannot extract text for method method: $signature\n" +
+          Logger.warn(s"Cannot extract text for method method: $simpleName\n" +
             s"\tFrom file: $fileName\n" +
             s"\tStart line: $startLine\n" +
             s"\tSource start: $sourceStart\n" +
