@@ -8,33 +8,36 @@ import edu.colorado.plv.fixr.storage.{MethodKey, MemoryMap}
 
 class TestParser extends FlatSpec with Matchers with BeforeAndAfter {
 
+  val githubUrl = "https://github.com/cuplv/fixr_source_code_service.git"
   val dstFile = new File("TestMainClass.java")
   val sourceCodeMap = new MemoryMap()
 
   "The source parser" should  "extract the main method" in {
-    val keyMain = MethodKey("TestMainClass.java",5,"main(java.lang.String[])")
+    val keyMain = MethodKey(githubUrl,"TestMainClass.java", 5,"main")
     val mainMethod = """public static void main(String[] args) {
 
   }"""
-    sourceCodeMap.lookupMethod(keyMain) should be (Option(mainMethod))
+    sourceCodeMap.lookupMethod(keyMain) should be (Option(Set(mainMethod)))
   }
 
   "The source parser" should  "find a method of an inner class" in {
-    val keyInner2 = MethodKey("TestMainClass.java",32,"innerClass2Method()")
+    val keyInner2 = MethodKey(githubUrl,"TestMainClass.java",
+      32,"innerClass2Method") // innerClass2Method()
     val inner2Method = """@Override
       public void innerClass2Method() {
         int i = 0;
         i = i + 1;
         return;
       }"""
-    sourceCodeMap.lookupMethod(keyInner2) should be (Option(inner2Method))
+    sourceCodeMap.lookupMethod(keyInner2) should be (Option(Set(inner2Method)))
   }
 
   "The source parser" should  "extract the constructor of an inner class" in {
-    val keyConstructor = MethodKey("TestMainClass.java",48,"simple.TestMainClass$InnerClass2()")
+    val keyConstructor = MethodKey(githubUrl,"TestMainClass.java",
+      48,"<init>") // "simple.TestMainClass$InnerClass2()"
     val constructorMethod = """public InnerClass2() {
     }"""
-    sourceCodeMap.lookupMethod(keyConstructor) should be (Option(constructorMethod))
+    sourceCodeMap.lookupMethod(keyConstructor) should be (Option(Set(constructorMethod)))
   }
 
   before {
@@ -44,7 +47,7 @@ class TestParser extends FlatSpec with Matchers with BeforeAndAfter {
     Files.copy(file.toPath(), dstFile.toPath())
 
     sourceCodeMap.clear()
-    ClassParser.parseClassFile(sourceCodeMap, dstFile.getPath())
+    ClassParser.parseClassFile(githubUrl, sourceCodeMap, dstFile.getPath())
   }
 
   after {

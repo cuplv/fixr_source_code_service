@@ -40,7 +40,7 @@ class TestSrcFetcherRoutes
 
         contentType should ===(ContentTypes.`application/json`)
 
-        responseAs[MethodSrcReply] should ===(MethodSrcReply("","Empty github url"))
+        responseAs[MethodSrcReply] should ===(MethodSrcReply(Set(),"Empty github url"))
       }
     }
 
@@ -57,16 +57,16 @@ class TestSrcFetcherRoutes
 
         contentType should ===(ContentTypes.`application/json`)
 
-        responseAs[MethodSrcReply] should ===(MethodSrcReply("","Cannot find the source code"))
+        responseAs[MethodSrcReply] should ===(MethodSrcReply(Set(),"Cannot find the source code"))
       }
     }
 
-    "Finds enqueue method" in {
+    "find createRawCall method" in {
       val findMethodSrc = FindMethodSrc("https://github.com/square/retrofit",
         "684f975",
         "OkHttpCall.java",
         189,
-        "createRawCall()")
+        "createRawCall")
       val entity = Marshal(findMethodSrc).to[MessageEntity].futureValue
 
       val request = HttpRequest(uri = "/src").withEntity(entity)
@@ -84,16 +84,16 @@ class TestSrcFetcherRoutes
     }
     return call;
   }"""
-        responseAs[MethodSrcReply] should ===(MethodSrcReply(createRawCall,""))
+        responseAs[MethodSrcReply] should ===(MethodSrcReply(Set(createRawCall),""))
       }
     }
 
-    "Finds read method" in {
+    "find read method" in {
       val findMethodSrc = FindMethodSrc("https://github.com/square/retrofit",
         "684f975",
         "OkHttpCall.java",
         294,
-        "read(okio.Buffer,long)")
+        "read")
       val entity = Marshal(findMethodSrc).to[MessageEntity].futureValue
 
       val request = HttpRequest(uri = "/src").withEntity(entity)
@@ -113,7 +113,7 @@ class TestSrcFetcherRoutes
           }
         }"""
 
-        responseAs[MethodSrcReply] should ===(MethodSrcReply(readRawCall,""))
+        responseAs[MethodSrcReply] should ===(MethodSrcReply(Set(readRawCall),""))
       }
     }
 

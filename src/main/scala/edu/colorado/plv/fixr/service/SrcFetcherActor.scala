@@ -11,8 +11,8 @@ object SrcFetcherActor {
     commitId : String,
     declaringFile : String,
     methodLine : Int,
-    methodSignature : String)
-  final case class MethodSrcReply(src : String, errorDesc : String)
+    methodName : String)
+  final case class MethodSrcReply(res : Set[String], errorDesc : String)
 
   def props : Props = Props[SrcFetcherActor]
 }
@@ -24,30 +24,31 @@ class SrcFetcherActor extends Actor with ActorLogging {
 
   def receive : Receive = {
     case FindMethodSrc(githubUrl, commitId,
-      declaringFile, methodLine, methodSignature) => {
+      declaringFile, methodLine, methodName) => {
 
       Logger.debug("Receive request:" +
         s" - githubUrl = $githubUrl" +
         s" - commitId = $commitId" +
         s" - declaringFile = $declaringFile" +
         s" - methodLine = $methodLine" +
-        s" - methodSignature = $methodSignature")
+        s" - methodName = $methodName")
 
       validateData(githubUrl, commitId, declaringFile,
-        methodLine, methodSignature) match {
+        methodLine, methodName) match {
         case Some(element) => sender() ! element
         case None => {
-          val methodKey = MethodKey(declaringFile,
+          val methodKey = MethodKey(githubUrl,
+            declaringFile,
             methodLine,
-            methodSignature)
+            methodName)
 
-          finder.lookupMethod(githubUrl,
-            commitId,
+          finder.lookupMethod(githubUrl, commitId,
             methodKey) match {
-            case Some(sourceCode) =>
-              sender() ! MethodSrcReply(sourceCode, "")
+            case Some(sourceCodeList) =>
+              sender() ! MethodSrcReply(sourceCodeList, "")
             case none =>
-              sender() ! MethodSrcReply("", "Cannot find the source code")
+              sender() ! MethodSrcReply(Set(),
+                "Cannot find the source code")
           }
         }
       }
@@ -58,20 +59,20 @@ class SrcFetcherActor extends Actor with ActorLogging {
     commitId : String,
     declaringFile : String,
     methodLine : Int,
-    methodSignature : String) : Option[MethodSrcReply] = {
+    methodName : String) : Option[MethodSrcReply] = {
       githubUrl match {
-        case "" => Some(MethodSrcReply("", "Empty github url"))
+        case "" => Some(MethodSrcReply(Set(), "Empty github url"))
         case _ =>
           commitId match {
-            case "" => Some(MethodSrcReply("", "Empty commit id"))
+            case "" => Some(MethodSrcReply(Set(), "Empty commit id"))
             case _ =>
               declaringFile match {
-                case "" => Some(MethodSrcReply("", "Empty declaring file"))
+                case "" => Some(MethodSrcReply(Set(), "Empty declaring file"))
                 case _ =>
-                  methodSignature match {
-                    case "" => Some(MethodSrcReply("", "Empty signature"))
-                    case _ => if (methodLine <= 0) 
-                      Some(MethodSrcReply("", "Negative method line"))
+                  methodName match {
+                    case "" => Some(MethodSrcReply(Set(), "Empty method name"))
+                    case _ => if (methodLine <= 0)
+                      Some(MethodSrcReply(Set(), "Negative method line"))
                     else
                       None
                   }

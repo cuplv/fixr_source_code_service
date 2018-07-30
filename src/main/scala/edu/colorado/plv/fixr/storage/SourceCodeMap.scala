@@ -1,8 +1,10 @@
 package edu.colorado.plv.fixr.storage
 
-case class MethodKey(declaringFile : String,
+case class MethodKey(
+  repoUrl : String,
+  declaringFile : String,
   startLine : Int,
-  signature : String)
+  methodName : String)
 
 /**
   * Defines the interface to the storage used to save the extracted
@@ -10,7 +12,7 @@ case class MethodKey(declaringFile : String,
   */
 trait SourceCodeMap {
   def insertMethod(key : MethodKey, methodText : String) : Unit
-  def lookupMethod(key : MethodKey) : Option[String]
+  def lookupMethod(key : MethodKey) : Option[Set[String]]
   def clear() : Unit
 }
 

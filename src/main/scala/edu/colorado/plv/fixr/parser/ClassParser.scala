@@ -16,7 +16,8 @@ object ClassParser {
     * Parse a java file and extract its methods source code
     * (stored in sourceCodeMap)
    */
-  def parseClassFile(sourceCodeMap : SourceCodeMap,
+  def parseClassFile(gitHubUrl : String,
+    sourceCodeMap : SourceCodeMap,
     inputFileName : String) : Unit = {
     lazy val launcher : Launcher = new Launcher()
 
@@ -36,10 +37,10 @@ object ClassParser {
     val processingManager : ProcessingManager =
       new QueueProcessingManager(factory)
 
-    val method_processor = new MethodProcessor(sourceCodeMap)
+    val method_processor = new MethodProcessor(gitHubUrl, sourceCodeMap)
     processingManager.addProcessor(method_processor)
 
-    val constructor_processor = new ConstructorProcessor(sourceCodeMap)
+    val constructor_processor = new ConstructorProcessor(gitHubUrl, sourceCodeMap)
     processingManager.addProcessor(constructor_processor)
 
     val elements =
