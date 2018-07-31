@@ -33,7 +33,7 @@ class TestSrcFetcherRoutes
         "", 1, "")
       val entity = Marshal(findMethodSrc).to[MessageEntity].futureValue
 
-      val request = HttpRequest(uri = "/src").withEntity(entity)
+      val request = Post(uri = "/src").withEntity(entity)
 
       request ~> routes ~> check {
         status should ===(StatusCodes.OK)
@@ -50,7 +50,7 @@ class TestSrcFetcherRoutes
         "Pippo.java", 1, "int m()")
       val entity = Marshal(findMethodSrc).to[MessageEntity].futureValue
 
-      val request = HttpRequest(uri = "/src").withEntity(entity)
+      val request = Post(uri = "/src").withEntity(entity)
 
       request ~> routes ~> check {
         status should ===(StatusCodes.OK)
@@ -69,7 +69,7 @@ class TestSrcFetcherRoutes
         "createRawCall")
       val entity = Marshal(findMethodSrc).to[MessageEntity].futureValue
 
-      val request = HttpRequest(uri = "/src").withEntity(entity)
+      val request = Post(uri = "/src").withEntity(entity)
 
       request ~> routes ~> check {
         status should ===(StatusCodes.OK)
@@ -96,7 +96,7 @@ class TestSrcFetcherRoutes
         "read")
       val entity = Marshal(findMethodSrc).to[MessageEntity].futureValue
 
-      val request = HttpRequest(uri = "/src").withEntity(entity)
+      val request = Post(uri = "/src").withEntity(entity)
 
       request ~> routes ~> check {
         status should ===(StatusCodes.OK)

@@ -33,7 +33,7 @@ trait SrcFetcherRoutes extends JsonSupport {
 
   lazy val srcFetcherRoutes: Route = 
     path("src") {
-      get {
+      post {
         entity(as[FindMethodSrc]) { findMethodRequest =>
           val maybeFindMethodSrc : Future[MethodSrcReply] =
             (srcFetcherActor ? findMethodRequest).mapTo[MethodSrcReply]
