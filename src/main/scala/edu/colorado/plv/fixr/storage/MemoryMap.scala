@@ -1,6 +1,8 @@
 package edu.colorado.plv.fixr.storage
 
 import scala.collection.mutable.{Map,HashMap};
+import scala.math.abs
+import edu.colorado.plv.fixr.Logger
 
 case class KeyNoLine(
   repoUrl : String,
@@ -74,10 +76,40 @@ class MemoryMap extends SourceCodeMap {
     }
   }
 
-  def lookupClosestMethod(key : MethodKey) : Option[String] = {
-    None
-  }
+  def lookupClosestMethod(key : MethodKey) : Option[(Int,Set[String])] = {
+    val optValue : Option[(Int,Set[String])] =
+      this.lookupLineMap(key) match {
+        case Some(mapLn) => {
+          val initVal : Option[(Int,Set[String])] = None
+          mapLn.foldLeft(initVal) {
+            case (optimal, (startLine, methodSet)) => {
+              val current_val = math.abs(key.startLine - startLine)
 
+              optimal match {
+                case Some(opt_pair) =>
+                  opt_pair match {
+                    case (opt_line, opt_set)
+                        if opt_line > current_val =>
+                      Some((startLine, methodSet))
+                    case _ => Some(opt_pair)
+                  }
+                case None => Some((startLine, methodSet))
+              }
+            }
+          }
+        }
+        case None => None
+      }
+
+    optValue match {
+      case Some(opt) => opt match {
+        case (optimal, s) => Some((optimal, s))
+        case _ => None
+      }
+      case None => None
+    }
+
+  }
 
   def clear() : Unit = {
     map.clear()

@@ -14,8 +14,7 @@ trait SourceCodeMap {
   def insertMethod(key : MethodKey, methodText : String) : Unit
   def lookupMethod(key : MethodKey) : Option[Set[String]]
 
-  def lookupClosestMethod(repoUrl, declaringFile,
-    startLine, methodkey) : Option[String];
+  def lookupClosestMethod(key : MethodKey) : Option[(Int,Set[String])];
 
   def clear() : Unit
 }

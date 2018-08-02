@@ -14,9 +14,9 @@ class SrcFinder(sourceCodeMap : SourceCodeMap)  {
 
   def lookupMethod(github_url : String,
     commit_id : String,
-    methodKey : MethodKey) : Option[Set[String]] = {
+    methodKey : MethodKey) : Option[(Int,Set[String])] = {
 
-    sourceCodeMap.lookupMethod(methodKey) match {
+    sourceCodeMap.lookupClosestMethod(methodKey) match {
       case Some(sourceCodeSet) => Some(sourceCodeSet)
       case None => {
         val closedRepo = RepoClosed(github_url, commit_id)
@@ -60,7 +60,7 @@ class SrcFinder(sourceCodeMap : SourceCodeMap)  {
                 }
               }))
 
-            sourceCodeMap.lookupMethod(methodKey) match {
+            sourceCodeMap.lookupClosestMethod(methodKey) match {
               case Some(sourceCode) => Some(sourceCode)
               case None => None
             }

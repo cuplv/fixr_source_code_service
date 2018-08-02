@@ -12,7 +12,8 @@ object SrcFetcherActor {
     declaringFile : String,
     methodLine : Int,
     methodName : String)
-  final case class MethodSrcReply(res : Set[String], errorDesc : String)
+  final case class MethodSrcReply(res : (Int,Set[String]),
+    errorDesc : String)
 
   def props : Props = Props[SrcFetcherActor]
 }
@@ -47,7 +48,7 @@ class SrcFetcherActor extends Actor with ActorLogging {
             case Some(sourceCodeList) =>
               sender() ! MethodSrcReply(sourceCodeList, "")
             case none =>
-              sender() ! MethodSrcReply(Set(),
+              sender() ! MethodSrcReply((-1,Set()),
                 "Cannot find the source code")
           }
         }
@@ -61,18 +62,18 @@ class SrcFetcherActor extends Actor with ActorLogging {
     methodLine : Int,
     methodName : String) : Option[MethodSrcReply] = {
       githubUrl match {
-        case "" => Some(MethodSrcReply(Set(), "Empty github url"))
+        case "" => Some(MethodSrcReply((-1,Set()), "Empty github url"))
         case _ =>
           commitId match {
-            case "" => Some(MethodSrcReply(Set(), "Empty commit id"))
+            case "" => Some(MethodSrcReply((-1,Set()), "Empty commit id"))
             case _ =>
               declaringFile match {
-                case "" => Some(MethodSrcReply(Set(), "Empty declaring file"))
+                case "" => Some(MethodSrcReply((-1,Set()), "Empty declaring file"))
                 case _ =>
                   methodName match {
-                    case "" => Some(MethodSrcReply(Set(), "Empty method name"))
+                    case "" => Some(MethodSrcReply((-1,Set()), "Empty method name"))
                     case _ => if (methodLine <= 0)
-                      Some(MethodSrcReply(Set(), "Negative method line"))
+                      Some(MethodSrcReply((-1,Set()), "Negative method line"))
                     else
                       None
                   }

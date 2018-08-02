@@ -18,7 +18,12 @@ class TestParser extends FlatSpec with Matchers with BeforeAndAfter {
 
   }"""
     sourceCodeMap.lookupMethod(keyMain) should be (Option(Set(mainMethod)))
+    sourceCodeMap.lookupClosestMethod(keyMain) should be (Option( (5,Set(mainMethod))) )
+
+    val keyMainApprox = MethodKey(githubUrl,"TestMainClass.java", 2,"main")
+    sourceCodeMap.lookupClosestMethod(keyMainApprox) should be (Option( (5,Set(mainMethod))) )
   }
+
 
   "The source parser" should  "find a method of an inner class" in {
     val keyInner2 = MethodKey(githubUrl,"TestMainClass.java",

@@ -40,7 +40,7 @@ class TestSrcFetcherRoutes
 
         contentType should ===(ContentTypes.`application/json`)
 
-        responseAs[MethodSrcReply] should ===(MethodSrcReply(Set(),"Empty github url"))
+        responseAs[MethodSrcReply] should ===(MethodSrcReply((-1,Set()),"Empty github url"))
       }
     }
 
@@ -57,7 +57,8 @@ class TestSrcFetcherRoutes
 
         contentType should ===(ContentTypes.`application/json`)
 
-        responseAs[MethodSrcReply] should ===(MethodSrcReply(Set(),"Cannot find the source code"))
+        responseAs[MethodSrcReply] should ===(MethodSrcReply((-1,Set()),
+          "Cannot find the source code"))
       }
     }
 
@@ -84,7 +85,7 @@ class TestSrcFetcherRoutes
     }
     return call;
   }"""
-        responseAs[MethodSrcReply] should ===(MethodSrcReply(Set(createRawCall),""))
+        responseAs[MethodSrcReply] should ===(MethodSrcReply((189,Set(createRawCall)),""))
       }
     }
 
@@ -113,7 +114,7 @@ class TestSrcFetcherRoutes
           }
         }"""
 
-        responseAs[MethodSrcReply] should ===(MethodSrcReply(Set(readRawCall),""))
+        responseAs[MethodSrcReply] should ===(MethodSrcReply((294,Set(readRawCall)),""))
       }
     }
 
