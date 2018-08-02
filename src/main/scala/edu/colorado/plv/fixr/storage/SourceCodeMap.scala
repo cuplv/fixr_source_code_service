@@ -13,6 +13,10 @@ case class MethodKey(
 trait SourceCodeMap {
   def insertMethod(key : MethodKey, methodText : String) : Unit
   def lookupMethod(key : MethodKey) : Option[Set[String]]
+
+  def lookupClosestMethod(repoUrl, declaringFile,
+    startLine, methodkey) : Option[String];
+
   def clear() : Unit
 }
 
