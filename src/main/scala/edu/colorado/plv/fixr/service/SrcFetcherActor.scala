@@ -6,6 +6,8 @@ import edu.colorado.plv.fixr.storage.{MethodKey,MemoryMap}
 
 import akka.actor.{Actor, ActorLogging, Props}
 
+import com.google.googlejavaformat.java.Formatter
+
 object SrcFetcherActor {
   final case class FindMethodSrc(githubUrl : String,
     commitId : String,
@@ -45,14 +47,28 @@ class SrcFetcherActor extends Actor with ActorLogging {
 
           finder.lookupMethod(githubUrl, commitId,
             methodKey) match {
-            case Some(sourceCodeList) =>
-              sender() ! MethodSrcReply(sourceCodeList, "")
+            case Some(lookupResult) =>
+              var processedResult = prettify(lookupResult)
+
+              sender() ! MethodSrcReply(processedResult, "")
             case none =>
               sender() ! MethodSrcReply((-1,Set()),
                 "Cannot find the source code")
           }
         }
       }
+    }
+  }
+
+  /** Post-process the found source code (e.g. indenting it)
+    *
+    */
+  private def prettify(lookupResult : (Int,Set[String])) : (Int,Set[String]) = {
+    lookupResult match {
+      case (opt_value, sourceCodeSet) =>
+        (opt_value, sourceCodeSet.map( elem => {
+          new Formatter().formatSource(elem);
+        }))
     }
   }
 
