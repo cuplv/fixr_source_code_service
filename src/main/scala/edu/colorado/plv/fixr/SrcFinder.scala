@@ -23,7 +23,8 @@ class SrcFinder(sourceCodeMap : SourceCodeMap)  {
         GitHelper.openRepo(closedRepo) match {
           case Some(openRepo) => {
 
-            Logger.debug(s"Method key ${methodKey.declaringFile}")
+            Logger.debug(s"Trying to find and insert method " +
+              s"key ${methodKey.declaringFile}")
 
             // Process all files in the repo with the same name
             // We can process all the files, too

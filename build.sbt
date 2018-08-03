@@ -23,6 +23,8 @@ lazy val root = (project in file(".")).
     libraryDependencies += akka_http_xml % Compile,
     libraryDependencies += akka_stream % Compile,
 
+    libraryDependencies += google_java_format % Compile,
+
     libraryDependencies += scalaTest % Test,
     libraryDependencies += akka_htto_testkit % Test,
     libraryDependencies += akka_testkit % Test,
