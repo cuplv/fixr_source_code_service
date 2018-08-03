@@ -6,7 +6,13 @@ import edu.colorado.plv.fixr.storage.{MethodKey,MemoryMap}
 
 import akka.actor.{Actor, ActorLogging, Props}
 
-import com.google.googlejavaformat.java.Formatter
+import java.lang.StringBuilder
+
+import com.google.googlejavaformat.java.{Formatter, JavaFormatterOptions}
+import com.google.googlejavaformat.java.{SnippetFormatter, Replacement}
+import com.google.googlejavaformat.java.SnippetFormatter.SnippetKind
+import com.google.common.collect.ImmutableList
+import com.google.common.collect.Range
 
 object SrcFetcherActor {
   final case class FindMethodSrc(githubUrl : String,
@@ -48,7 +54,13 @@ class SrcFetcherActor extends Actor with ActorLogging {
           finder.lookupMethod(githubUrl, commitId,
             methodKey) match {
             case Some(lookupResult) =>
-              var processedResult = prettify(lookupResult)
+              // Robust handling for indentation
+              var processedResult =
+                try {
+                  prettify(lookupResult)
+                } catch {
+                  case e : Exception => lookupResult
+                }
 
               sender() ! MethodSrcReply(processedResult, "")
             case none =>
@@ -60,6 +72,7 @@ class SrcFetcherActor extends Actor with ActorLogging {
     }
   }
 
+
   /** Post-process the found source code (e.g. indenting it)
     *
     */
@@ -67,7 +80,43 @@ class SrcFetcherActor extends Actor with ActorLogging {
     lookupResult match {
       case (opt_value, sourceCodeSet) =>
         (opt_value, sourceCodeSet.map( elem => {
-          new Formatter().formatSource(elem);
+          val formatterOptions = JavaFormatterOptions.defaultOptions()
+          val formatter = new Formatter(formatterOptions)
+
+          // Builds the dummy class
+          val buf : StringBuffer = new StringBuffer("class Dummy {\n")
+          buf.append(elem)
+          buf.append("\n}")
+
+          val formattedWithDummy = formatter.formatSource(buf.toString)
+
+          // Remove the dummy string and fix the indentation
+          def removeDummy(buf : StringBuffer,
+            list : List[String],
+            indentToRemove : Int) : StringBuffer = {
+            list match {
+              case line :: xs => {
+                val newLine =
+                if (line.length > indentToRemove) {
+                  line.substring(indentToRemove, line.length())
+                } else {
+                  line // may be empty
+                }
+                buf.append(newLine)
+                buf.append("\n")
+
+              removeDummy(buf, xs, indentToRemove)
+              }
+              case Nil => buf
+            }
+          }
+
+          val strList : List[String] =
+            formattedWithDummy.lines.foldLeft(List[String]()) ((r,c) => c :: r).reverse
+          val sliced = strList.slice(1,strList.length-1)
+
+          removeDummy(new StringBuffer(),
+            sliced, 2).toString()
         }))
     }
   }
