@@ -30,6 +30,7 @@ object ClassParser {
     val env = launcher.getEnvironment()
     env.setNoClasspath(true)
     env.setShouldCompile(false)
+    env.setPreserveLineNumbers(true)
     launcher.buildModel()
 
     val factory : Factory = launcher.getFactory()

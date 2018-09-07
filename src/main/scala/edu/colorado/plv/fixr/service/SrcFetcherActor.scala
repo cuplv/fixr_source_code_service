@@ -57,7 +57,7 @@ class SrcFetcherActor extends Actor with ActorLogging {
               // Robust handling for indentation
               var processedResult =
                 try {
-                  prettify(lookupResult)
+                  lookupResult
                 } catch {
                   case e : Exception => lookupResult
                 }

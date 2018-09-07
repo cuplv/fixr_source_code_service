@@ -16,7 +16,8 @@ class TestParser extends FlatSpec with Matchers with BeforeAndAfter {
     val keyMain = MethodKey(githubUrl,"TestMainClass.java", 5,"main")
     val mainMethod = """public static void main(String[] args) {
 
-  }"""
+  }
+"""
     sourceCodeMap.lookupMethod(keyMain) should be (Option(Set(mainMethod)))
     sourceCodeMap.lookupClosestMethod(keyMain) should be (Option( (5,Set(mainMethod))) )
 
@@ -27,13 +28,14 @@ class TestParser extends FlatSpec with Matchers with BeforeAndAfter {
 
   "The source parser" should  "find a method of an inner class" in {
     val keyInner2 = MethodKey(githubUrl,"TestMainClass.java",
-      32,"innerClass2Method") // innerClass2Method()
+      31,"innerClass2Method") // innerClass2Method()
     val inner2Method = """@Override
       public void innerClass2Method() {
         int i = 0;
         i = i + 1;
         return;
-      }"""
+      }
+"""
     sourceCodeMap.lookupMethod(keyInner2) should be (Option(Set(inner2Method)))
   }
 
@@ -41,7 +43,8 @@ class TestParser extends FlatSpec with Matchers with BeforeAndAfter {
     val keyConstructor = MethodKey(githubUrl,"TestMainClass.java",
       48,"<init>") // "simple.TestMainClass$InnerClass2()"
     val constructorMethod = """public InnerClass2() {
-    }"""
+    }
+"""
     sourceCodeMap.lookupMethod(keyConstructor) should be (Option(Set(constructorMethod)))
   }
 
@@ -52,7 +55,12 @@ class TestParser extends FlatSpec with Matchers with BeforeAndAfter {
     Files.copy(file.toPath(), dstFile.toPath())
 
     sourceCodeMap.clear()
-    ClassParser.parseClassFile(githubUrl, sourceCodeMap, dstFile.getPath())
+    // ClassParser.parseClassFile(githubUrl, sourceCodeMap, dstFile.getPath())
+
+    JdtClassParser.parseClassFile(githubUrl, sourceCodeMap, dstFile.getPath())
+
+
+
   }
 
   after {
