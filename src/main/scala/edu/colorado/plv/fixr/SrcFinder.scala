@@ -7,7 +7,7 @@ import org.eclipse.jgit.treewalk.filter.PathSuffixFilter
 
 import edu.colorado.plv.fixr.storage.{MethodKey, SourceCodeMap}
 import edu.colorado.plv.fixr.github.{RepoClosed, RepoOpened, GitHelper}
-import edu.colorado.plv.fixr.parser.JdtClassParser
+import edu.colorado.plv.fixr.parser.{JdtClassParser, ClassParser}
 
 
 class SrcFinder(sourceCodeMap : SourceCodeMap)  {

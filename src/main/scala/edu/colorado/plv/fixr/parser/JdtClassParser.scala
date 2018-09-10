@@ -90,21 +90,28 @@ object JdtClassParser {
     val visitors    = List[MyVisitor](astVisitor)
 
     val file = new File(inputFileName)
-    val data = ParseTools.readFile(inputFileName)
-    val sourceLines = data.split("\n")
-    visitors.foreach {(astVisitor) => astVisitor.sourceLines = sourceLines}
-    val stdClasspath : Array[String] = Array(System.getProperty("java.class.path"))
-    val encodings : Array[String] = Array("UTF-8")
-    val sources : Array[String] = Array(".")
+    try {
+      val data = ParseTools.readFile(inputFileName)
 
-    val resParse =
-      ParseTools.parse(
-        data,
-        inputFileName,
-        visitors,
-        stdClasspath,
-        sources,
-        encodings)
+      val sourceLines = data.split("\n")
+      visitors.foreach {(astVisitor) => astVisitor.sourceLines = sourceLines}
+      val stdClasspath : Array[String] = Array(System.getProperty("java.class.path"))
+      val encodings : Array[String] = Array("UTF-8")
+      val sources : Array[String] = Array(".")
+
+      val resParse =
+        ParseTools.parse(
+          data,
+          inputFileName,
+          visitors,
+          stdClasspath,
+          sources,
+          encodings)
+
+    } catch {
+      case e : Exception =>
+        Logger.debug("e.getMessage")
+    }
   }
 }
 
