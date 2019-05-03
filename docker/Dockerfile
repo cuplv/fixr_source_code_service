@@ -9,16 +9,11 @@ RUN apt-get update -qq -y \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# Oracle Java Jdk 8
-RUN \
-  echo oracle-java8-installer shared/accepted-oracle-license-v1-1 select true | debconf-set-selections && \
-  add-apt-repository -y ppa:webupd8team/java && \
-  apt-get update && \
-  apt-get install -y oracle-java8-installer && \
-  rm -rf /var/lib/apt/lists/* && \
-  rm -rf /var/cache/oracle-jdk7-installer
-# Define commonly used JAVA_HOME variable
-ENV JAVA_HOME /usr/lib/jvm/java-8-oracle
+# Java Jdk 8
+RUN add-apt-repository -y ppa:webupd8team/java && \
+    apt-get update && \
+    sudo apt-get install -y openjdk-8-jdk
+ENV JAVA_HOME /usr/lib/jvm/java-8-openjdk-amd64
 
 # Sbt
 RUN echo "deb https://dl.bintray.com/sbt/debian /" | sudo tee -a /etc/apt/sources.list.d/sbt.list
@@ -37,10 +32,7 @@ RUN useradd -m srcservice
 USER srcservice
 WORKDIR /home/srcservice
 
-RUN mkdir .ssh && ssh-keyscan github.com >> ~/.ssh/known_hosts
-
-RUN echo "Clone and build repository..." \
-    && git clone https://github.com/cuplv/fixr_source_code_service \
+RUN git clone https://github.com/cuplv/fixr_source_code_service \
     && cd fixr_source_code_service \
     && sbt stage
 
