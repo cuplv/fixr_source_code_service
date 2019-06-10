@@ -10,8 +10,11 @@ import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.{Matchers, WordSpec}
 import scala.concurrent.duration._
 
-import edu.colorado.plv.fixr.service.SrcFetcherActor.{FindMethodSrc,
-  MethodSrcReply}
+import edu.colorado.plv.fixr.service.SrcFetcherActor.{
+  FindMethodSrc,
+  SourceDiff, DiffEntry, PatchMethodSrc,
+  MethodSrcReply
+}
 
 class TestSrcFetcherRoutes
     extends WordSpec
@@ -118,7 +121,29 @@ class TestSrcFetcherRoutes
       }
     }
 
-  }
+    "patch correctly" in {
+      val findMethodSrc = FindMethodSrc("https://github.com/square/retrofit",
+        "684f975",
+        "OkHttpCall.java",
+        294,
+        "read")
 
+      val diffsToApply =
+        List(SourceDiff("+",
+          DiffEntry(296, "read", "banana"),
+          List(DiffEntry(0, "exit", ""))
+        ))
+
+      val patchMethodSrc = PatchMethodSrc(findMethodSrc, diffsToApply)
+      val entity = Marshal(patchMethodSrc).to[MessageEntity].futureValue
+      val request = Post(uri = "/patch").withEntity(entity)
+
+      request ~> routes ~> check {
+        status should ===(StatusCodes.OK)
+        contentType should ===(ContentTypes.`application/json`)
+        responseAs[MethodSrcReply] should ===(MethodSrcReply((-1,Set()),"Empty github url"))
+      }
+    }
+  }
 
 }

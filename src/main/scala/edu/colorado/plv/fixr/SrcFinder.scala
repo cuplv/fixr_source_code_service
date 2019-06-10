@@ -50,7 +50,7 @@ class SrcFinder(sourceCodeMap : SourceCodeMap)  {
                       Files.copy(inputStream, fileToWrite.toPath(),
                         StandardCopyOption.REPLACE_EXISTING)
 
-                      JdtClassParser.parseClassFile(
+                      ClassParser.parseClassFile(
                         github_url,
                         sourceCodeMap,
                         fileToWrite.getPath)

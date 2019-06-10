@@ -20,6 +20,21 @@ object SrcFetcherActor {
     declaringFile : String,
     methodLine : Int,
     methodName : String)
+
+  final case class DiffEntry(
+    lineNum : Int,
+    entryName : String,
+    what : String)
+
+  final case class SourceDiff(
+    diffType : String,
+    entry : DiffEntry,
+    exits : List[DiffEntry]
+  )
+
+  final case class PatchMethodSrc(methodRef : FindMethodSrc,
+    diffsToApply : List[SourceDiff])
+
   final case class MethodSrcReply(res : (Int,Set[String]),
     errorDesc : String)
 
@@ -69,6 +84,25 @@ class SrcFetcherActor extends Actor with ActorLogging {
           }
         }
       }
+    }
+
+    case PatchMethodSrc(methodRef, diffsToApply) => {
+
+      methodRef match {
+        case FindMethodSrc(githubUrl, commitId, declaringFile,
+          methodLine, methodName) => {
+
+
+
+          sender() ! MethodSrcReply((-1,Set()),
+            githubUrl)
+        }
+        case _ => {
+          sender() ! MethodSrcReply((-1,Set()),
+            "Cannot find the source code")
+        }
+      }
+
     }
   }
 
