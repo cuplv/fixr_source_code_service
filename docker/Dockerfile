@@ -10,8 +10,7 @@ RUN apt-get update -qq -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Java Jdk 8
-RUN add-apt-repository -y ppa:webupd8team/java && \
-    apt-get update && \
+RUN apt-get update && \
     sudo apt-get install -y openjdk-8-jdk
 ENV JAVA_HOME /usr/lib/jvm/java-8-openjdk-amd64
 
