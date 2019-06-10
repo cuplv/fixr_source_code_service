@@ -78,7 +78,7 @@ class SrcFetcherActor extends Actor with ActorLogging {
                 }
 
               sender() ! MethodSrcReply(processedResult, "")
-            case none =>
+            case None =>
               sender() ! MethodSrcReply((-1,Set()),
                 "Cannot find the source code")
           }
@@ -86,23 +86,32 @@ class SrcFetcherActor extends Actor with ActorLogging {
       }
     }
 
-    case PatchMethodSrc(methodRef, diffsToApply) => {
+    case PatchMethodSrc(findMethodSrc, diffsToApply) => {
+      validateData(findMethodSrc) match {
+        case Some(element) => sender() ! element
+        case None => {
+          validateData(diffsToApply) match {
+            case Some(element) => sender() ! element
+            case None => {
+              val methodKey = MethodKey(findMethodSrc.githubUrl,
+                findMethodSrc.declaringFile,
+                findMethodSrc.methodLine,
+                findMethodSrc.methodName)
 
-      methodRef match {
-        case FindMethodSrc(githubUrl, commitId, declaringFile,
-          methodLine, methodName) => {
-
-
-
-          sender() ! MethodSrcReply((-1,Set()),
-            githubUrl)
-        }
-        case _ => {
-          sender() ! MethodSrcReply((-1,Set()),
-            "Cannot find the source code")
+              val lookupRes =
+                finder.lookupMethod(findMethodSrc.githubUrl,
+                  findMethodSrc.commitId, methodKey)
+              lookupRes match {
+                case Some(lookupResult) =>
+                  sender() ! MethodSrcReply(lookupResult, "")
+                case None =>
+                  sender() ! MethodSrcReply((-1,Set()),
+                    "Cannot find the source code")
+              }
+            }
+          }
         }
       }
-
     }
   }
 
@@ -155,6 +164,16 @@ class SrcFetcherActor extends Actor with ActorLogging {
     }
   }
 
+  private def validateData(findMethodSrc : FindMethodSrc) :
+      Option[MethodSrcReply] = {
+    findMethodSrc match {
+      case FindMethodSrc(githubUrl, commitId,
+        declaringFile, methodLine, methodName) => validateData(githubUrl,
+          commitId, declaringFile, methodLine, methodName)
+      case _ => Some(MethodSrcReply((-1,Set()), "Wrong format for findMethodSrc"))
+    }
+  }
+
   private def validateData(githubUrl : String,
     commitId : String,
     declaringFile : String,
@@ -179,5 +198,11 @@ class SrcFetcherActor extends Actor with ActorLogging {
               }
           }
       }
+  }
+
+  private def validateData(diffsToApply : List[SourceDiff]) :
+      Option[MethodSrcReply] = {
+    // TODO
+    None
   }
 }

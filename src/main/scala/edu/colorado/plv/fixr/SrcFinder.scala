@@ -61,6 +61,7 @@ class SrcFinder(sourceCodeMap : SourceCodeMap)  {
                 }
               }))
 
+            // Get the previously inserted method
             sourceCodeMap.lookupClosestMethod(methodKey) match {
               case Some(sourceCode) => Some(sourceCode)
               case None => None
