@@ -1,10 +1,14 @@
 package edu.colorado.plv.fixr.parser
 
 import spoon.processing.AbstractProcessor
+import spoon.reflect.factory.Factory
 import spoon.reflect.declaration.{CtConstructor, CtMethod, CtExecutable}
-import spoon.reflect.code.{CtInvocation}
+import spoon.reflect.code.{CtInvocation, CtComment, CtStatement}
 import spoon.reflect.visitor.filter.TypeFilter
 import spoon.reflect.cu.SourcePosition
+
+import spoon.reflect.visitor.DefaultJavaPrettyPrinter
+//import spoon.reflect.visitor.SniperJavaPrettyPrinter
 
 import edu.colorado.plv.fixr.Logger
 import edu.colorado.plv.fixr.storage.{MethodKey, SourceCodeMap}
@@ -20,8 +24,8 @@ class MethodProcessorPatch(gitHubUrl : String,
     * Method called to process a single CtMethod node in the AST
     */
   def process(method_decl : CtMethod[_]) : Unit = {
-    CtExecutableProcessorPatch.process(gitHubUrl, sourceCodeMap, method_decl,
-      diffsToApply)
+    CtCollectPatchList.process(gitHubUrl, sourceCodeMap, method_decl,
+      diffsToApply, getFactory())
   }
 }
 
@@ -33,23 +37,25 @@ class ConstructorProcessorPatch(gitHubUrl: String,
     * Method called to process a single CtConstructor node in the AST
     */
   def process(method_decl : CtConstructor[_]) : Unit = {
-    CtExecutableProcessorPatch.process(gitHubUrl, sourceCodeMap, method_decl,
-      diffsToApply)
+
+    CtCollectPatchList.process(gitHubUrl, sourceCodeMap, method_decl,
+      diffsToApply, getFactory())
   }
 }
 
-object CtExecutableProcessorPatch {
+object CtCollectPatchList {
 
   /**
     * Helper method used to process a CtExecutable node.
     */
   def process(gitHubUrl : String, sourceCodeMap : SourceCodeMap,
-    executable_decl : CtExecutable[_], diffsToApply : List[SourceDiff]) = {
+    executable_decl : CtExecutable[_], diffsToApply : List[SourceDiff],
+    factory : Factory) = {
 
     val typeFilter = new TypeFilter(classOf[CtInvocation[_]])
     val methodInvocations = executable_decl.getElements(typeFilter)
 
-
+    // Process the method invocations
     methodInvocations.toList.forEach{
       methodInvocation => {
         val sourcePosition = methodInvocation.getPosition
@@ -57,8 +63,38 @@ object CtExecutableProcessorPatch {
         var ctReference = methodInvocation.getExecutable()
         var simpleName = ctReference.getSimpleName
 
+        if (simpleName != "otherMethodToCall") {
+
+        } else {
+
+
         Logger.debug(s"Processing invocation $simpleName at line $startLine...")
+
+        val lineComment = factory.Code().createComment("cavallo goloso",
+          CtComment.CommentType.INLINE);
+
+        val parent = methodInvocation.getParent(classOf[CtStatement])
+        parent.addComment(lineComment)
+
+        //val parent = methodInvocation.getParent(classOf[CtStatement])
+        //methodInvocation.addComment(lineComment)
+        }
+
     }}
+
+    val env = factory.getEnvironment()
+    // env.setAutoImports(true);
+    //env.setCommentEnabled(true)
+    val prettyPrinter = new DefaultJavaPrettyPrinter(env)
+//    val prettyPrinter = new SniperJavaPrettyPrinter(env)
+
+    env.setPreserveLineNumbers(false)
+    env.setCommentEnabled(true)
+    prettyPrinter.scan(executable_decl)
+    val printed = prettyPrinter.toString()
+    env.setPreserveLineNumbers(true)
+    Logger.debug(s"Result is ${printed}")
+
 
 
     // var simpleName = executable_decl.getSimpleName

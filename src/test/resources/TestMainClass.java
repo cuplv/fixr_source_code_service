@@ -56,7 +56,15 @@ public class TestMainClass {
   public void callMethod() {
     int i = 0;
 
-    i = intMethod("cavallo")
+    i = otherMethodToCall(3) + intMethod("cavallo");
+
+    if (otherMethodToCall(2) == 3) {
+      i = 2;
+    }
+  }
+
+  public int otherMethodToCall(int i) {
+    return i + 2;
   }
 
 }
