@@ -15,15 +15,17 @@ class MemoryMap extends SourceCodeMap {
   val map : Map[KeyNoLine, Map[Int, Set[String]]] =
     new HashMap[KeyNoLine, Map[Int, Set[String]]]()
 
+  val maxLines = 4
+
   def lookupLineMap(key : MethodKey) : Option[Map[Int, Set[String]]] = {
     val keyNoLine =  KeyNoLine(key.repoUrl,
       key.declaringFile, key.methodName);
 
-      if (map.contains(keyNoLine)) {
-        Some(map(keyNoLine))
-      } else {
-        None
-      }
+    if (map.contains(keyNoLine)) {
+      Some(map(keyNoLine))
+    } else {
+      None
+    }
   }
 
   def lookupSet(key : MethodKey,
@@ -88,12 +90,15 @@ class MemoryMap extends SourceCodeMap {
               optimal match {
                 case Some(opt_pair) =>
                   opt_pair match {
-                    case (opt_line, opt_set)
-                        if opt_line > current_val =>
-                      Some((startLine, methodSet))
+                    case (optimalLine, opt_set)
+                        if (math.abs(key.startLine - optimalLine)) > current_val => {
+                          Some((startLine, methodSet))
+                        }
                     case _ => Some(opt_pair)
                   }
-                case None => Some((startLine, methodSet))
+                case None => {
+                  Some((startLine, methodSet))
+                }
               }
             }
           }

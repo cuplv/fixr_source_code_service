@@ -53,4 +53,10 @@ public class TestMainClass {
   }
 
 
+  public void callMethod() {
+    int i = 0;
+
+    i = intMethod("cavallo")
+  }
+
 }

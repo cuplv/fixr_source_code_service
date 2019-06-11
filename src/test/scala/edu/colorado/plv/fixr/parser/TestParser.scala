@@ -16,8 +16,7 @@ class TestParser extends FlatSpec with Matchers with BeforeAndAfter {
     val keyMain = MethodKey(githubUrl,"TestMainClass.java", 5,"main")
     val mainMethod = """public static void main(String[] args) {
 
-  }
-"""
+  }"""
     sourceCodeMap.lookupMethod(keyMain) should be (Option(Set(mainMethod)))
     sourceCodeMap.lookupClosestMethod(keyMain) should be (Option( (5,Set(mainMethod))) )
 
@@ -28,23 +27,31 @@ class TestParser extends FlatSpec with Matchers with BeforeAndAfter {
 
   "The source parser" should  "find a method of an inner class" in {
     val keyInner2 = MethodKey(githubUrl,"TestMainClass.java",
-      31,"innerClass2Method") // innerClass2Method()
+      32,"innerClass2Method") // innerClass2Method()
     val inner2Method = """@Override
       public void innerClass2Method() {
         int i = 0;
         i = i + 1;
         return;
+      }"""
+    val lookUp = sourceCodeMap.lookupClosestMethod(keyInner2)
+
+    lookUp match {
+      case Some( (line, code) ) => {
+        line should equal (32+-4)
+        code should be (Set(inner2Method))
       }
-"""
-    sourceCodeMap.lookupMethod(keyInner2) should be (Option(Set(inner2Method)))
+      case None => lookUp should not be None
+    }
+
+    //sourceCodeMap.lookupClosestMethod(keyInner2) should be (Option( (32, Set(inner2Method))))
   }
 
   "The source parser" should  "extract the constructor of an inner class" in {
     val keyConstructor = MethodKey(githubUrl,"TestMainClass.java",
       48,"<init>") // "simple.TestMainClass$InnerClass2()"
     val constructorMethod = """public InnerClass2() {
-    }
-"""
+    }"""
     sourceCodeMap.lookupMethod(keyConstructor) should be (Option(Set(constructorMethod)))
   }
 
@@ -55,9 +62,9 @@ class TestParser extends FlatSpec with Matchers with BeforeAndAfter {
     Files.copy(file.toPath(), dstFile.toPath())
 
     sourceCodeMap.clear()
-    // ClassParser.parseClassFile(githubUrl, sourceCodeMap, dstFile.getPath())
+    ClassParser.parseClassFile(githubUrl, sourceCodeMap, dstFile.getPath())
 
-    JdtClassParser.parseClassFile(githubUrl, sourceCodeMap, dstFile.getPath())
+    // JdtClassParser.parseClassFile(githubUrl, sourceCodeMap, dstFile.getPath())
 
 
 
