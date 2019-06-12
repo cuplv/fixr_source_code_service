@@ -127,7 +127,4 @@ class MemoryMap extends SourceCodeMap {
   def loopupFileInfo(key : MethodKey) : Option[String] = {
     None
   }
-
-  def clearFile() : Unit = {
-  }
 }

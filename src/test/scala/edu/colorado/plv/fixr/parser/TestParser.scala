@@ -65,7 +65,6 @@ class TestParser extends FlatSpec with Matchers with BeforeAndAfter {
         Files.copy(file.toPath(), dstFile.toPath())
 
     sourceCodeMap.clear()
-    sourceCodeMap.clearFile()
 
     val fileContent = new String(Files.readAllBytes(dstFile.toPath()))
     val fileInfo = FileInfo(githubUrl, commitId,
@@ -73,8 +72,7 @@ class TestParser extends FlatSpec with Matchers with BeforeAndAfter {
       dstFile.toPath().toString(),
       fileContent)
 
-    ClassParser.parseClassFile(githubUrl, sourceCodeMap,
-      dstFile.getPath(),
+    ClassParser.parseClassFile(sourceCodeMap,
       fileInfo)
   }
 

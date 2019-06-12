@@ -1,6 +1,6 @@
 package edu.colorado.plv.fixr.parser
 
-import java.io.{IOException, File, BufferedReader, FileReader}
+import java.io.{IOException, File, BufferedReader, FileReader, StringReader}
 import java.util.Scanner;
 import java.lang.StringBuilder;
 
@@ -18,19 +18,8 @@ object SourceExtractor {
 
     try {
       val reader = new BufferedReader(new FileReader(methodFile))
+      extractTextTextReader(reader, startPosition, endPosition)
 
-      val length = endPosition - startPosition + 1
-      var readChar : Array[Char] = new Array[Char](length)
-
-      reader.skip(startPosition)
-      val rval = reader.read(readChar, 0, length)
-
-      if (rval > 0) {
-        Some(String.valueOf(readChar))
-      } else {
-        Logger.error("Cannot read enough characters from file")
-        None
-      }
     } catch {
       case ioe : IOException => {
         Logger.debug("Error reading file %s", methodFile.getName())
@@ -42,6 +31,35 @@ object SourceExtractor {
       }
     }
   }
+
+  def extractTextString(methodFileString : String,
+    startPosition : Int,
+    endPosition : Int) : Option[String] = {
+
+    val inputStringReader = new StringReader(methodFileString)
+    val reader = new BufferedReader(inputStringReader)
+    extractTextTextReader(reader, startPosition, endPosition)
+  }
+
+
+  def extractTextTextReader(reader : BufferedReader,
+    startPosition : Int,
+    endPosition : Int) : Option[String] = {
+
+    val length = endPosition - startPosition + 1
+    var readChar : Array[Char] = new Array[Char](length)
+
+    reader.skip(startPosition)
+    val rval = reader.read(readChar, 0, length)
+
+    if (rval > 0) {
+      Some(String.valueOf(readChar))
+    } else {
+      Logger.error("Cannot read enough characters from file")
+      None
+    }
+  }
+
 
   def extractText(methodFile : File,
     startLine : Int,

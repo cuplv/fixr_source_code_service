@@ -24,13 +24,11 @@ case class FileInfo(
 trait SourceCodeMap {
   def insertMethod(key : MethodKey, methodText : String) : Unit
   def lookupMethod(key : MethodKey) : Option[Set[String]]
-
   def lookupClosestMethod(key : MethodKey) : Option[(Int,Set[String])];
-
-  def clear() : Unit
 
   def insertFileInfo(key : MethodKey, fileInfo : FileInfo): Unit
   def loopupFileInfo(key : MethodKey) : Option[String]
-  def clearFile() : Unit
+
+  def clear() : Unit
 }
 

@@ -1,6 +1,7 @@
 package edu.colorado.plv.fixr.parser
 
 import spoon.Launcher
+import spoon.compiler.Environment
 import spoon.reflect.factory.Factory
 import spoon.processing.ProcessingManager
 import spoon.support.QueueProcessingManager
@@ -11,7 +12,7 @@ import spoon.reflect.code.{CtInvocation, CtComment, CtStatement}
 import spoon.reflect.visitor.filter.{TypeFilter, AbstractFilter}
 import spoon.reflect.visitor.DefaultJavaPrettyPrinter
 //import spoon.reflect.visitor.SniperJavaPrettyPrinter
-
+import spoon.support.compiler.{VirtualFile}
 
 import edu.colorado.plv.fixr.storage.{SourceCodeMap, MethodKey, FileInfo}
 import edu.colorado.plv.fixr.Logger
@@ -25,17 +26,15 @@ object ClassParser {
     * Parse a java file and extract its methods source code
     * (stored in sourceCodeMap)
    */
-  def parseClassFile(gitHubUrl : String,
-    sourceCodeMap : SourceCodeMap,
-    inputFileName : String,
+  def parseClassFile(sourceCodeMap : SourceCodeMap,
     fileInfo : FileInfo) : Unit = {
     lazy val launcher : Launcher = new Launcher()
 
-    Logger.info(s"Parsing $inputFileName")
+    Logger.info(s"Parsing ${fileInfo.declaringFile}")
 
-    val args1 = Array("-i", inputFileName)
-
-    launcher.setArgs(args1)
+    val virtualFile = new VirtualFile(fileInfo.fileContent,
+      fileInfo.declaringFile)
+    launcher.addInputResource(virtualFile)
 
     val env = launcher.getEnvironment()
     env.setNoClasspath(true)
@@ -49,11 +48,11 @@ object ClassParser {
     val processingManager : ProcessingManager =
       new QueueProcessingManager(factory)
 
-    val method_processor = new MethodProcessor(gitHubUrl, sourceCodeMap,
-      fileInfo)
+    val method_processor = new MethodProcessor(fileInfo.repoUrl,
+      sourceCodeMap, fileInfo, factory)
     processingManager.addProcessor(method_processor)
-    val constructor_processor = new ConstructorProcessor(gitHubUrl,
-      sourceCodeMap, fileInfo)
+    val constructor_processor = new ConstructorProcessor(fileInfo.repoUrl,
+      sourceCodeMap, fileInfo, factory)
     processingManager.addProcessor(constructor_processor)
 
     val elements =
@@ -64,20 +63,14 @@ object ClassParser {
     launcher.process()
   }
 
-  // TODO: to move
-
-
-  def parseAndPatchClassFile(gitHubUrl : String,
-    sourceCodeMap : SourceCodeMap,
-    inputFileName : String,
+  def parseAndPatchClassFile(inputFileName : String,
     methodKey : MethodKey,
     diffsToApply : Map[Int, List[CommentDiff]]) : Option[String] = {
 
     Logger.info(s"Parsing $inputFileName")
 
     lazy val launcher : Launcher = new Launcher()
-    val args1 = Array("-i", inputFileName)
-    launcher.setArgs(args1)
+    launcher.addInputResource(inputFileName)
 
     val env = launcher.getEnvironment()
     env.setNoClasspath(true)
@@ -153,16 +146,35 @@ object ClassParser {
         })
 
         // Return the modified comment
-        env.setCommentEnabled(true)
-        val prettyPrinter = new DefaultJavaPrettyPrinter(env)
-        env.setPreserveLineNumbers(false)
-        env.setCommentEnabled(true)
-        prettyPrinter.scan(methodDecl)
-        val printed = prettyPrinter.toString()
-        env.setPreserveLineNumbers(true)
-        Some(printed)
+        Some(ClassParser.printMethodDecl(env, methodDecl))
       }
       case None => None
     }
   }
+
+  def printMethodDecl(env : Environment,
+    methodDecl : CtExecutable[_]) : String = {
+    env.setCommentEnabled(true)
+    val prettyPrinter = new DefaultJavaPrettyPrinter(env)
+
+    val isPreserveLineNumbers = env.isPreserveLineNumbers()
+    val isCommentsEnabled = env.isCommentsEnabled()
+    env.setPreserveLineNumbers(false)
+    env.setCommentEnabled(true)
+    prettyPrinter.scan(methodDecl)
+    val printed = prettyPrinter.toString()
+    env.setPreserveLineNumbers(isPreserveLineNumbers)
+    env.setCommentEnabled(isCommentsEnabled)
+    printed
+  }
+
+  def convertStreamToString(is : java.io.InputStream) : String = {
+    val scanner = new java.util.Scanner(is).useDelimiter("\\A")
+    if (scanner.hasNext())
+      scanner.next()
+    else
+      ""
+  }
 }
+
+

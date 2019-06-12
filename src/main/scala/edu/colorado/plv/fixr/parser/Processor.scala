@@ -3,13 +3,14 @@ package edu.colorado.plv.fixr.parser
 import spoon.processing.AbstractProcessor
 import spoon.reflect.declaration.{CtConstructor, CtMethod, CtExecutable}
 import spoon.reflect.cu.SourcePosition
+import spoon.reflect.factory.Factory
 
 import edu.colorado.plv.fixr.Logger
 import edu.colorado.plv.fixr.storage.{MethodKey, SourceCodeMap, FileInfo}
 
 
 class MethodProcessor(gitHubUrl : String, sourceCodeMap : SourceCodeMap,
-  fileInfo : FileInfo)
+  fileInfo : FileInfo, factory : Factory)
     extends AbstractProcessor[CtMethod[_]] {
 
   /**
@@ -17,12 +18,12 @@ class MethodProcessor(gitHubUrl : String, sourceCodeMap : SourceCodeMap,
     */
   def process(method_decl : CtMethod[_]) : Unit = {
     CtExecutableProcessor.process(gitHubUrl, sourceCodeMap,
-      method_decl, fileInfo)
+      method_decl, fileInfo, factory)
   }
 }
 
 class ConstructorProcessor(gitHubUrl: String, sourceCodeMap : SourceCodeMap,
-  fileInfo : FileInfo)
+  fileInfo : FileInfo, factory : Factory)
     extends AbstractProcessor[CtConstructor[_]] {
 
   /**
@@ -30,7 +31,7 @@ class ConstructorProcessor(gitHubUrl: String, sourceCodeMap : SourceCodeMap,
     */
   def process(method_decl : CtConstructor[_]) : Unit = {
     CtExecutableProcessor.process(gitHubUrl, sourceCodeMap,
-      method_decl, fileInfo)
+      method_decl, fileInfo, factory)
   }
 }
 
@@ -40,7 +41,8 @@ object CtExecutableProcessor {
     * Helper method used to process a CtExecutable node.
     */
   def process(gitHubUrl : String, sourceCodeMap : SourceCodeMap,
-    executable_decl : CtExecutable[_], fileInfo : FileInfo) = {
+    executable_decl : CtExecutable[_], fileInfo : FileInfo,
+    factory : Factory) = {
     var simpleName = executable_decl.getSimpleName
     val signature = executable_decl.getSignature
     val sourcePosition = executable_decl.getPosition
@@ -53,9 +55,11 @@ object CtExecutableProcessor {
       val fileName = methodFile.getName
       val sourceStart = sourcePosition.getSourceStart
       val sourceEnd = sourcePosition.getSourceEnd
+      val env = factory.getEnvironment()
 
-      val methodTextOption = SourceExtractor.extractText(methodFile, sourceStart,
-        sourceEnd)
+      val methodTextOption = SourceExtractor.extractTextString(
+        fileInfo.fileContent,
+        sourceStart, sourceEnd)
 
       methodTextOption match {
         case Some(methodText) => {
