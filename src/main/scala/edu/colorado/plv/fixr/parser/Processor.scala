@@ -5,28 +5,32 @@ import spoon.reflect.declaration.{CtConstructor, CtMethod, CtExecutable}
 import spoon.reflect.cu.SourcePosition
 
 import edu.colorado.plv.fixr.Logger
-import edu.colorado.plv.fixr.storage.{MethodKey, SourceCodeMap}
+import edu.colorado.plv.fixr.storage.{MethodKey, SourceCodeMap, FileInfo}
 
 
-class MethodProcessor(gitHubUrl : String, sourceCodeMap : SourceCodeMap)
+class MethodProcessor(gitHubUrl : String, sourceCodeMap : SourceCodeMap,
+  fileInfo : FileInfo)
     extends AbstractProcessor[CtMethod[_]] {
 
   /**
     * Method called to process a single CtMethod node in the AST
     */
   def process(method_decl : CtMethod[_]) : Unit = {
-    CtExecutableProcessor.process(gitHubUrl, sourceCodeMap, method_decl)
+    CtExecutableProcessor.process(gitHubUrl, sourceCodeMap,
+      method_decl, fileInfo)
   }
 }
 
-class ConstructorProcessor(gitHubUrl: String, sourceCodeMap : SourceCodeMap)
+class ConstructorProcessor(gitHubUrl: String, sourceCodeMap : SourceCodeMap,
+  fileInfo : FileInfo)
     extends AbstractProcessor[CtConstructor[_]] {
 
   /**
     * Method called to process a single CtConstructor node in the AST
     */
   def process(method_decl : CtConstructor[_]) : Unit = {
-    CtExecutableProcessor.process(gitHubUrl, sourceCodeMap, method_decl)
+    CtExecutableProcessor.process(gitHubUrl, sourceCodeMap,
+      method_decl, fileInfo)
   }
 }
 
@@ -36,7 +40,7 @@ object CtExecutableProcessor {
     * Helper method used to process a CtExecutable node.
     */
   def process(gitHubUrl : String, sourceCodeMap : SourceCodeMap,
-    executable_decl : CtExecutable[_]) = {
+    executable_decl : CtExecutable[_], fileInfo : FileInfo) = {
     var simpleName = executable_decl.getSimpleName
     val signature = executable_decl.getSignature
     val sourcePosition = executable_decl.getPosition

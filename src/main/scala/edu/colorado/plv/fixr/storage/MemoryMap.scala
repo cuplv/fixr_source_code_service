@@ -119,4 +119,15 @@ class MemoryMap extends SourceCodeMap {
   def clear() : Unit = {
     map.clear()
   }
+
+  def insertFileInfo(key : MethodKey, fileInfo : FileInfo) = {
+    // TODO
+  }
+
+  def loopupFileInfo(key : MethodKey) : Option[String] = {
+    None
+  }
+
+  def clearFile() : Unit = {
+  }
 }

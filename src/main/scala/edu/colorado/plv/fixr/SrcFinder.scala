@@ -5,16 +5,15 @@ import java.nio.file.{Files, Paths, Path, StandardCopyOption}
 import com.google.common.io.{Files => GuavaFiles}
 import org.eclipse.jgit.treewalk.filter.PathSuffixFilter
 
-import edu.colorado.plv.fixr.storage.{MethodKey, SourceCodeMap}
+import edu.colorado.plv.fixr.storage.{MethodKey, SourceCodeMap, FileInfo}
 import edu.colorado.plv.fixr.github.{RepoClosed, RepoOpened, GitHelper}
-import edu.colorado.plv.fixr.parser.{JdtClassParser, ClassParser}
+import edu.colorado.plv.fixr.parser.{ClassParser, CommentDiff}
 
 
 class SrcFinder(sourceCodeMap : SourceCodeMap)  {
 
   def lookupMethod(github_url : String,
-    commit_id : String,
-    methodKey : MethodKey) : Option[(Int,Set[String])] = {
+    commit_id : String, methodKey : MethodKey) : Option[(Int,Set[String])] = {
 
     sourceCodeMap.lookupClosestMethod(methodKey) match {
       case Some(sourceCodeSet) => Some(sourceCodeSet)
@@ -22,7 +21,6 @@ class SrcFinder(sourceCodeMap : SourceCodeMap)  {
         val closedRepo = RepoClosed(github_url, commit_id)
         GitHelper.openRepo(closedRepo) match {
           case Some(openRepo) => {
-
             Logger.debug(s"Trying to find and insert method " +
               s"key ${methodKey.declaringFile}")
 
@@ -50,10 +48,20 @@ class SrcFinder(sourceCodeMap : SourceCodeMap)  {
                       Files.copy(inputStream, fileToWrite.toPath(),
                         StandardCopyOption.REPLACE_EXISTING)
 
+                      val fileContent = new String(Files.readAllBytes(fileToWrite.toPath()))
+
+                      val fileInfo = FileInfo(github_url,
+                        methodKey.declaringFile,
+                        filePath,
+                        fileContent)
+
                       ClassParser.parseClassFile(
                         github_url,
                         sourceCodeMap,
-                        fileToWrite.getPath)
+                        fileToWrite.getPath,
+                        fileInfo
+                      )
+
                     } finally {
                       fileToWrite.delete
                       tmpDir.delete
@@ -72,6 +80,80 @@ class SrcFinder(sourceCodeMap : SourceCodeMap)  {
       }
     }
   }
+
+
+  // def patchMethod(github_url : String,
+  //   commit_id : String,
+  //   methodKey : MethodKey,
+  //   commentsDiff : Map[Int, List[CommentDiff]]) : Option[(Int,Set[String])] = {
+
+  //   // Finds or insert the method in the table
+  //   val foundMethods = self.lookupMethod(github_url, commit_id, methodKey)
+
+  //   match 
+
+  // def parseAndPatchClassFile(gitHubUrl, sourceCodeMap,
+  //   : String,
+  //   sourceCodeMap : SourceCodeMap,
+  //   inputFileName : String,
+  //   methodKey : MethodKey,
+
+  //   sourceCodeMap.lookupClosestMethod(methodKey) match {
+  //     case Some(sourceCodeSet) => Some(sourceCodeSet)
+  //     case None => {
+  //       val closedRepo = RepoClosed(github_url, commit_id)
+  //       GitHelper.openRepo(closedRepo) match {
+  //         case Some(openRepo) => {
+
+  //           Logger.debug(s"Trying to find and insert method " +
+  //             s"key ${methodKey.declaringFile}")
+
+  //           // Process all files in the repo with the same name
+  //           // We can process all the files, too
+  //           val filter = Some(PathSuffixFilter.create(methodKey.declaringFile))
+  //           // Alternative: process already all .java files in the repository
+  //           // val filter = Some(PathSuffixFilter.create(".java"))
+  //           GitHelper.foldLeftRepoFile(openRepo,
+  //             filter,
+  //             (),
+  //             ((acc : Unit, res : (InputStream, String)) => {
+  //               res match {
+  //                 case (inputStream, filePath) =>
+  //                   Logger.debug(s"Processing $filePath...")
+
+  //                   val tmpDir : File = GuavaFiles.createTempDir()
+
+  //                   val tmpFilePath = Paths.get(tmpDir.getPath(),
+  //                     methodKey.declaringFile)
+
+  //                   val fileToWrite = new File(tmpFilePath.toString)
+
+  //                   try {
+  //                     Files.copy(inputStream, fileToWrite.toPath(),
+  //                       StandardCopyOption.REPLACE_EXISTING)
+
+  //                     ClassParser.parseClassFile(
+  //                       github_url,
+  //                       sourceCodeMap,
+  //                       fileToWrite.getPath)
+  //                   } finally {
+  //                     fileToWrite.delete
+  //                     tmpDir.delete
+  //                   }
+  //               }
+  //             }))
+
+  //           // Get the previously inserted method
+  //           sourceCodeMap.lookupClosestMethod(methodKey) match {
+  //             case Some(sourceCode) => Some(sourceCode)
+  //             case None => None
+  //           }
+  //         }
+  //         case None => None
+  //       }
+  //     }
+  //   }
+  // }
 }
 
 

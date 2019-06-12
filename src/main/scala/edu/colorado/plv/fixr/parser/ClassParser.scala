@@ -13,7 +13,7 @@ import spoon.reflect.visitor.DefaultJavaPrettyPrinter
 //import spoon.reflect.visitor.SniperJavaPrettyPrinter
 
 
-import edu.colorado.plv.fixr.storage.{SourceCodeMap, MethodKey}
+import edu.colorado.plv.fixr.storage.{SourceCodeMap, MethodKey, FileInfo}
 import edu.colorado.plv.fixr.Logger
 
 import scala.collection.JavaConversions._
@@ -27,7 +27,8 @@ object ClassParser {
    */
   def parseClassFile(gitHubUrl : String,
     sourceCodeMap : SourceCodeMap,
-    inputFileName : String) : Unit = {
+    inputFileName : String,
+    fileInfo : FileInfo) : Unit = {
     lazy val launcher : Launcher = new Launcher()
 
     Logger.info(s"Parsing $inputFileName")
@@ -48,10 +49,11 @@ object ClassParser {
     val processingManager : ProcessingManager =
       new QueueProcessingManager(factory)
 
-    val method_processor = new MethodProcessor(gitHubUrl, sourceCodeMap)
+    val method_processor = new MethodProcessor(gitHubUrl, sourceCodeMap,
+      fileInfo)
     processingManager.addProcessor(method_processor)
-
-    val constructor_processor = new ConstructorProcessor(gitHubUrl, sourceCodeMap)
+    val constructor_processor = new ConstructorProcessor(gitHubUrl,
+      sourceCodeMap, fileInfo)
     processingManager.addProcessor(constructor_processor)
 
     val elements =

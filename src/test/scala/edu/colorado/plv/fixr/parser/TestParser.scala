@@ -4,29 +4,30 @@ import org.scalatest._
 import java.io.File
 import java.nio.file.Files
 
-import edu.colorado.plv.fixr.storage.{MethodKey, MemoryMap}
+import edu.colorado.plv.fixr.storage.{MethodKey, MemoryMap, FileInfo}
 
 class TestParser extends FlatSpec with Matchers with BeforeAndAfter {
 
   val githubUrl = "https://github.com/cuplv/fixr_source_code_service.git"
-  val dstFile = new File("TestMainClass.java")
+  val sourceName = "TestMainClass.java"
+  val dstFile = new File(sourceName)
   val sourceCodeMap = new MemoryMap()
 
   "The source parser" should  "extract the main method" in {
-    val keyMain = MethodKey(githubUrl,"TestMainClass.java", 5,"main")
+    val keyMain = MethodKey(githubUrl,sourceName, 5,"main")
     val mainMethod = """public static void main(String[] args) {
 
   }"""
     sourceCodeMap.lookupMethod(keyMain) should be (Option(Set(mainMethod)))
     sourceCodeMap.lookupClosestMethod(keyMain) should be (Option( (5,Set(mainMethod))) )
 
-    val keyMainApprox = MethodKey(githubUrl,"TestMainClass.java", 2,"main")
+    val keyMainApprox = MethodKey(githubUrl,sourceName, 2,"main")
     sourceCodeMap.lookupClosestMethod(keyMainApprox) should be (Option( (5,Set(mainMethod))) )
   }
 
 
   "The source parser" should  "find a method of an inner class" in {
-    val keyInner2 = MethodKey(githubUrl,"TestMainClass.java",
+    val keyInner2 = MethodKey(githubUrl,sourceName,
       32,"innerClass2Method") // innerClass2Method()
     val inner2Method = """@Override
       public void innerClass2Method() {
@@ -48,7 +49,7 @@ class TestParser extends FlatSpec with Matchers with BeforeAndAfter {
   }
 
   "The source parser" should  "extract the constructor of an inner class" in {
-    val keyConstructor = MethodKey(githubUrl,"TestMainClass.java",
+    val keyConstructor = MethodKey(githubUrl,sourceName,
       48,"<init>") // "simple.TestMainClass$InnerClass2()"
     val constructorMethod = """public InnerClass2() {
     }"""
@@ -63,7 +64,15 @@ class TestParser extends FlatSpec with Matchers with BeforeAndAfter {
         Files.copy(file.toPath(), dstFile.toPath())
 
     sourceCodeMap.clear()
-    ClassParser.parseClassFile(githubUrl, sourceCodeMap, dstFile.getPath())
+    sourceCodeMap.clearFile()
+
+    val fileContent = new String(Files.readAllBytes(dstFile.toPath()))
+    val fileInfo = FileInfo(githubUrl,
+      sourceName,
+      dstFile.toPath().toString(),
+      fileContent)
+
+    ClassParser.parseClassFile(githubUrl, sourceCodeMap, dstFile.getPath(), fileInfo)
 
     // JdtClassParser.parseClassFile(githubUrl, sourceCodeMap, dstFile.getPath())
 

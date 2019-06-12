@@ -6,9 +6,18 @@ case class MethodKey(
   startLine : Int,
   methodName : String)
 
+case class FileInfo(
+  repoUrl : String,
+  declaringFile : String,
+  filePathInRepo : String,
+  fileContent : String)
+
 /**
   * Defines the interface to the storage used to save the extracted
   * source code
+  * 
+  * The trait should be called cache instead of map --- we do not want to
+  * keep in memory all the results!
   */
 trait SourceCodeMap {
   def insertMethod(key : MethodKey, methodText : String) : Unit
@@ -17,5 +26,9 @@ trait SourceCodeMap {
   def lookupClosestMethod(key : MethodKey) : Option[(Int,Set[String])];
 
   def clear() : Unit
+
+  def insertFileInfo(key : MethodKey, fileInfo : FileInfo): Unit
+  def loopupFileInfo(key : MethodKey) : Option[String]
+  def clearFile() : Unit
 }
 
