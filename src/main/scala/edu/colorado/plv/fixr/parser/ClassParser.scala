@@ -4,16 +4,20 @@ import spoon.Launcher
 import spoon.reflect.factory.Factory
 import spoon.processing.ProcessingManager
 import spoon.support.QueueProcessingManager
-import spoon.reflect.declaration.{CtExecutable, CtMethod}
-import spoon.reflect.visitor.filter.{TypeFilter,
-  AbstractFilter}
+import spoon.reflect.declaration.{
+  CtExecutable, CtMethod, CtConstructor
+}
+import spoon.reflect.code.{CtInvocation, CtComment, CtStatement}
+import spoon.reflect.visitor.filter.{TypeFilter, AbstractFilter}
+import spoon.reflect.visitor.DefaultJavaPrettyPrinter
+//import spoon.reflect.visitor.SniperJavaPrettyPrinter
 
-import scala.math.abs
 
 import edu.colorado.plv.fixr.storage.{SourceCodeMap, MethodKey}
 import edu.colorado.plv.fixr.Logger
-import edu.colorado.plv.fixr.service.SrcFetcherActor.{SourceDiff}
 
+import scala.collection.JavaConversions._
+import scala.math.abs
 
 object ClassParser {
 
@@ -58,17 +62,19 @@ object ClassParser {
     launcher.process()
   }
 
+  // TODO: to move
+
+
   def parseAndPatchClassFile(gitHubUrl : String,
     sourceCodeMap : SourceCodeMap,
     inputFileName : String,
     methodKey : MethodKey,
-    diffsToApply : List[SourceDiff]) : Option[String] = {
-    lazy val launcher : Launcher = new Launcher()
+    diffsToApply : Map[Int, List[CommentDiff]]) : Option[String] = {
 
     Logger.info(s"Parsing $inputFileName")
 
+    lazy val launcher : Launcher = new Launcher()
     val args1 = Array("-i", inputFileName)
-
     launcher.setArgs(args1)
 
     val env = launcher.getEnvironment()
@@ -80,51 +86,81 @@ object ClassParser {
 
     val factory : Factory = launcher.getFactory()
 
-    val processingManager : ProcessingManager =
-      new QueueProcessingManager(factory)
+    // Get the list of method declaration to be changed
+    val methodDecls =
+      factory.getModel.getElements(
+        new AbstractFilter(classOf[CtExecutable[_]]) {
+          override def matches(executable : CtExecutable[_]) : Boolean = {
+            if (executable.isInstanceOf[CtMethod[_]] ||
+              executable.isInstanceOf[CtConstructor[_]]) {
+              val fileName = executable.getPosition.getFile.getName
+              val startLine = executable.getPosition.getLine
 
-    val method_processor = new MethodProcessorPatch(gitHubUrl, sourceCodeMap,
-      diffsToApply)
-    processingManager.addProcessor(method_processor)
-
-    val constructor_processor =
-      new ConstructorProcessorPatch(gitHubUrl, sourceCodeMap, diffsToApply)
-    processingManager.addProcessor(constructor_processor)
-
-    // var filter = new TypeFilter(classOf[CtExecutable[_]])
-    var filter = new AbstractFilter(classOf[CtMethod[_]]) {
-      override def matches(executable_decl : CtMethod[_]) : Boolean = {
-        val simpleName = executable_decl.getSimpleName
-        val signature = executable_decl.getSignature
-        val sourcePosition = executable_decl.getPosition
-        val startLine = sourcePosition.getLine
-        val methodFile = sourcePosition.getFile
-
-        Logger.debug(s"Checking match for ${simpleName}...")
-
-        methodFile match {
-          case null => false
-          case _ => {
-            val fileName = methodFile.getName
-
-            val res = (methodKey.declaringFile == fileName &&
+              methodKey.declaringFile == fileName &&
               math.abs(methodKey.startLine - startLine) < 5 &&
-              methodKey.methodName == simpleName)
+              methodKey.methodName == executable.getSimpleName
+            } else false
+          }})
 
-            Logger.debug(s"Match? ${res}")
-
-            res
-          }}
-
-
-      }
+    // Method invocations that have a match with a diff entry
+    val methodDeclRes = methodDecls.toList match {
+      case x :: xs => Some(x)
+      case Nil => None
     }
-    val elements = factory.getModel.getElements(filter)
 
-    processingManager.process(elements)
+    methodDeclRes match {
+      case Some(methodDecl) => {
+        // Get all the invocations in the first method we found.
+        // We should not find more than 1 method declaration with the
+        // same name and in the 5 line interval
+        val invocations = methodDecl.getElements(
+          new AbstractFilter(classOf[CtInvocation[_]]) {
+            override def matches (invocation : CtInvocation[_]) : Boolean = {
+              diffsToApply.contains(invocation.getPosition.getLine)
+            }
+          })
+        invocations.toList
 
-    launcher.process()
+        // Insert the comments
+        invocations.forEach(invocation => {
+          val line = invocation.getPosition.getLine
+          val diffsAtLineRes = diffsToApply.get(line)
 
-    return Some("abc")
+          diffsAtLineRes match {
+            case Some(diffsAtLine) => {
+              diffsAtLine.forEach(commentDiff => {
+                val commentType =
+                  if (commentDiff.isMultiLine)
+                    CtComment.CommentType.INLINE
+                  else
+                    CtComment.CommentType.BLOCK
+
+                val comment = factory.Code().createComment(commentDiff.diffText,
+                  commentType)
+
+                // Add the comment to the first statement parent
+                val parent = invocation.getParent(classOf[CtStatement])
+                parent.addComment(comment)
+              })
+            }
+            case None => {
+              Logger.debug("Not found diff at line ${line}")
+              ()
+            }
+          }
+        })
+
+        // Return the modified comment
+        env.setCommentEnabled(true)
+        val prettyPrinter = new DefaultJavaPrettyPrinter(env)
+        env.setPreserveLineNumbers(false)
+        env.setCommentEnabled(true)
+        prettyPrinter.scan(methodDecl)
+        val printed = prettyPrinter.toString()
+        env.setPreserveLineNumbers(true)
+        Some(printed)
+      }
+      case None => None
+    }
   }
 }
