@@ -29,27 +29,25 @@ class SrcFinder(sourceCodeMap : SourceCodeMap)  {
   }
 
   def patchMethod(methodKey : MethodKey,
-    commentsDiff : Map[Int, List[CommentDiff]]) : Option[(Int,String)] = {
-    sourceCodeMap.lookupClosestMethod(methodKey) match {
-      case Some(sourceCodeSet) => Some((1,""))
+    commentsDiff : Map[Int, List[CommentDiff]]) : Option[String] = {
+
+    val fileInfoTmp = sourceCodeMap.lookupFileInfo(methodKey)
+
+    val fileInfo = fileInfoTmp match {
+      case Some(x) => fileInfoTmp
       case None => {
+        // try to process the repo and get the file again
         val repoProcessed = processRepo(methodKey, true)
-
-        repoProcessed match {
-          case Some(x) => sourceCodeMap.lookupClosestMethod(methodKey) match {
-            case Some(sourceCode) => {
-              // We do have a file and a method we can process that.
-              // We do not really care about the source code here, because we
-              // have to run spoon on the file again.
-
-             // ClassParser.parseAndPatchClassFile(
-              None
-            }
-            case None => None
-          }
-          case None => None
-        }
+        sourceCodeMap.lookupFileInfo(methodKey)
       }
+    }
+
+    fileInfo match {
+      case Some(fileInfo) => {
+        // Patch the file
+        ClassParser.parseAndPatchClassFile(methodKey, fileInfo, commentsDiff)
+      }
+      case None => None
     }
   }
 

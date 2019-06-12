@@ -63,14 +63,16 @@ object ClassParser {
     launcher.process()
   }
 
-  def parseAndPatchClassFile(inputFileName : String,
-    methodKey : MethodKey,
+  def parseAndPatchClassFile(methodKey : MethodKey,
+    fileInfo : FileInfo,
     diffsToApply : Map[Int, List[CommentDiff]]) : Option[String] = {
 
-    Logger.info(s"Parsing $inputFileName")
+    Logger.info(s"Parsing ${fileInfo.declaringFile}")
 
     lazy val launcher : Launcher = new Launcher()
-    launcher.addInputResource(inputFileName)
+    val virtualFile = new VirtualFile(fileInfo.fileContent,
+      fileInfo.declaringFile)
+    launcher.addInputResource(virtualFile)
 
     val env = launcher.getEnvironment()
     env.setNoClasspath(true)

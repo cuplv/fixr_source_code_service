@@ -22,6 +22,6 @@ trait JsonSupport extends SprayJsonSupport {
   implicit val patchMethodSrcJsonFormat = jsonFormat2(PatchMethodSrc)
 
 
-  implicit val methodSrcJsonFormat = jsonFormat2(MethodSrcReply)
+  implicit val methodSrcReplyJsonFormat = jsonFormat2(MethodSrcReply)
 }
 

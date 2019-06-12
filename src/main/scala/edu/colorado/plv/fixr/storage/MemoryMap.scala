@@ -6,6 +6,7 @@ import edu.colorado.plv.fixr.Logger
 
 case class KeyNoLine(
   repoUrl : String,
+  commitId : String,
   declaringFile : String,
   methodName : String)
 
@@ -15,11 +16,18 @@ class MemoryMap extends SourceCodeMap {
   val map : Map[KeyNoLine, Map[Int, Set[String]]] =
     new HashMap[KeyNoLine, Map[Int, Set[String]]]()
 
+  val mapFiles : Map[MethodKey, FileInfo] =
+    new HashMap[MethodKey, FileInfo]()
+
   val maxLines = 4
 
-  def lookupLineMap(key : MethodKey) : Option[Map[Int, Set[String]]] = {
-    val keyNoLine =  KeyNoLine(key.repoUrl,
+  def getKeyNoLine(key : MethodKey) : KeyNoLine =
+    return KeyNoLine(key.repoUrl, key.commitId,
       key.declaringFile, key.methodName);
+
+
+  def lookupLineMap(key : MethodKey) : Option[Map[Int, Set[String]]] = {
+    val keyNoLine =  getKeyNoLine(key)
 
     if (map.contains(keyNoLine)) {
       Some(map(keyNoLine))
@@ -43,8 +51,7 @@ class MemoryMap extends SourceCodeMap {
       this.lookupLineMap(key) match {
         case Some(mapLn) => mapLn
         case None => {
-          val keyNoLine =  KeyNoLine(key.repoUrl, key.declaringFile,
-            key.methodName);
+          val keyNoLine =  getKeyNoLine(key)
           val mapLn = new HashMap[Int, Set[String]]()
           map.update(keyNoLine, mapLn)
           mapLn
@@ -121,10 +128,10 @@ class MemoryMap extends SourceCodeMap {
   }
 
   def insertFileInfo(key : MethodKey, fileInfo : FileInfo) = {
-    // TODO
+    mapFiles.update(key, fileInfo)
   }
 
-  def loopupFileInfo(key : MethodKey) : Option[String] = {
-    None
+  def lookupFileInfo(key : MethodKey) : Option[FileInfo] = {
+    mapFiles.get(key)
   }
 }

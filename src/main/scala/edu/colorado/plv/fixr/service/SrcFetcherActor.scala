@@ -41,6 +41,9 @@ object SrcFetcherActor {
   final case class MethodSrcReply(res : (Int,Set[String]),
     errorDesc : String)
 
+  final case class PatchReply(res : String, errorDesc : String)
+
+
   def props : Props = Props[SrcFetcherActor]
 }
 
@@ -105,21 +108,15 @@ class SrcFetcherActor extends Actor with ActorLogging {
                 findMethodSrc.methodLine,
                 findMethodSrc.methodName)
 
-              // TODO
-              // val patchRes =
-              //   finder.patch(findMethodSrc.githubUrl,
-              //     findMethodSrc.commitId, methodKey, commentsDiff)
+              val patchRes = finder.patchMethod(methodKey, commentDiffs)
 
-              // val lookupRes = None
-              // lookupRes match {
-              //   case Some(lookupResult) =>
-              //     sender() ! MethodSrcReply(lookupResult, "")
-              //   case None =>
-              //     sender() ! MethodSrcReply((-1,Set()),
-              //       "Cannot find the source code")
-              // }
-              sender() ! MethodSrcReply((-1,Set()),
-                "Cannot find the source code")
+              patchRes match {
+                case Some(lookupResult) =>
+                  sender() ! MethodSrcReply((0, Set(lookupResult)), "")
+                case None =>
+                  sender() ! MethodSrcReply((-1, Set()),
+                    "Cannot find the source code")
+              }
             }
           }
         }
