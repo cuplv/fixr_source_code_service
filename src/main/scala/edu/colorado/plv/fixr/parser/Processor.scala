@@ -66,7 +66,9 @@ object CtExecutableProcessor {
             s"\tSource end: $sourceEnd"
           )
 
-          sourceCodeMap.insertMethod(new MethodKey(gitHubUrl,fileName, startLine, simpleName),
+          sourceCodeMap.insertMethod(new MethodKey(gitHubUrl,
+            fileInfo.commitId,
+            fileName, startLine, simpleName),
             methodText)
         }
         case _ => {

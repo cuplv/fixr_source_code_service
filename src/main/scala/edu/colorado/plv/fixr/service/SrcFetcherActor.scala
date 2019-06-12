@@ -65,12 +65,12 @@ class SrcFetcherActor extends Actor with ActorLogging {
         case Some(element) => sender() ! element
         case None => {
           val methodKey = MethodKey(githubUrl,
+            commitId,
             declaringFile,
             methodLine,
             methodName)
 
-          finder.lookupMethod(githubUrl, commitId,
-            methodKey) match {
+          finder.lookupMethod(methodKey) match {
             case Some(lookupResult) =>
               // Robust handling for indentation
               var processedResult =
@@ -100,6 +100,7 @@ class SrcFetcherActor extends Actor with ActorLogging {
               val commentDiffs = CreatePatchText.processDiffs(diffsToApply)
 
               val methodKey = MethodKey(findMethodSrc.githubUrl,
+                findMethodSrc.commitId,
                 findMethodSrc.declaringFile,
                 findMethodSrc.methodLine,
                 findMethodSrc.methodName)

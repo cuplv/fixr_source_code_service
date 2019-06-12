@@ -2,12 +2,14 @@ package edu.colorado.plv.fixr.storage
 
 case class MethodKey(
   repoUrl : String,
+  commitId : String,
   declaringFile : String,
   startLine : Int,
   methodName : String)
 
 case class FileInfo(
   repoUrl : String,
+  commitId : String,
   declaringFile : String,
   filePathInRepo : String,
   fileContent : String)

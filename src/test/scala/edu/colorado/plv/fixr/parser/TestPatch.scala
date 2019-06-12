@@ -11,10 +11,12 @@ class TestPatch extends FlatSpec with Matchers with BeforeAndAfter {
 
   val githubUrl = "https://github.com/cuplv/fixr_source_code_service.git"
   val dstFile = new File("TestMainClass.java")
+  val commitId = "commit_id"
   val sourceCodeMap = new MemoryMap()
 
   "The patcher" should  "patch the callMethod" in {
     val keyCallMethod = MethodKey(githubUrl,
+      commitId,
       "TestMainClass.java",
       56,
       "callMethod")
