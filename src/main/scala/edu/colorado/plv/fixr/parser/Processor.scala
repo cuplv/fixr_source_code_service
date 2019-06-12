@@ -3,30 +3,35 @@ package edu.colorado.plv.fixr.parser
 import spoon.processing.AbstractProcessor
 import spoon.reflect.declaration.{CtConstructor, CtMethod, CtExecutable}
 import spoon.reflect.cu.SourcePosition
+import spoon.reflect.factory.Factory
 
 import edu.colorado.plv.fixr.Logger
-import edu.colorado.plv.fixr.storage.{MethodKey, SourceCodeMap}
+import edu.colorado.plv.fixr.storage.{MethodKey, SourceCodeMap, FileInfo}
 
 
-class MethodProcessor(gitHubUrl : String, sourceCodeMap : SourceCodeMap)
+class MethodProcessor(gitHubUrl : String, sourceCodeMap : SourceCodeMap,
+  fileInfo : FileInfo, factory : Factory)
     extends AbstractProcessor[CtMethod[_]] {
 
   /**
     * Method called to process a single CtMethod node in the AST
     */
   def process(method_decl : CtMethod[_]) : Unit = {
-    CtExecutableProcessor.process(gitHubUrl, sourceCodeMap, method_decl)
+    CtExecutableProcessor.process(gitHubUrl, sourceCodeMap,
+      method_decl, fileInfo, factory)
   }
 }
 
-class ConstructorProcessor(gitHubUrl: String, sourceCodeMap : SourceCodeMap)
+class ConstructorProcessor(gitHubUrl: String, sourceCodeMap : SourceCodeMap,
+  fileInfo : FileInfo, factory : Factory)
     extends AbstractProcessor[CtConstructor[_]] {
 
   /**
     * Method called to process a single CtConstructor node in the AST
     */
   def process(method_decl : CtConstructor[_]) : Unit = {
-    CtExecutableProcessor.process(gitHubUrl, sourceCodeMap, method_decl)
+    CtExecutableProcessor.process(gitHubUrl, sourceCodeMap,
+      method_decl, fileInfo, factory)
   }
 }
 
@@ -36,7 +41,8 @@ object CtExecutableProcessor {
     * Helper method used to process a CtExecutable node.
     */
   def process(gitHubUrl : String, sourceCodeMap : SourceCodeMap,
-    executable_decl : CtExecutable[_]) = {
+    executable_decl : CtExecutable[_], fileInfo : FileInfo,
+    factory : Factory) = {
     var simpleName = executable_decl.getSimpleName
     val signature = executable_decl.getSignature
     val sourcePosition = executable_decl.getPosition
@@ -49,9 +55,11 @@ object CtExecutableProcessor {
       val fileName = methodFile.getName
       val sourceStart = sourcePosition.getSourceStart
       val sourceEnd = sourcePosition.getSourceEnd
+      val env = factory.getEnvironment()
 
-      val methodTextOption = SourceExtractor.extractText(methodFile, sourceStart,
-        sourceEnd)
+      val methodTextOption = SourceExtractor.extractTextString(
+        fileInfo.fileContent,
+        sourceStart, sourceEnd)
 
       methodTextOption match {
         case Some(methodText) => {
@@ -62,7 +70,9 @@ object CtExecutableProcessor {
             s"\tSource end: $sourceEnd"
           )
 
-          sourceCodeMap.insertMethod(new MethodKey(gitHubUrl,fileName, startLine, simpleName),
+          sourceCodeMap.insertMethod(new MethodKey(gitHubUrl,
+            fileInfo.commitId,
+            fileName, startLine, simpleName),
             methodText)
         }
         case _ => {

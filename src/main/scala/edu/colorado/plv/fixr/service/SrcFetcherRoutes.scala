@@ -42,6 +42,17 @@ trait SrcFetcherRoutes extends JsonSupport {
           }
         }
       }
+    } ~
+    path("patch") {
+      post {
+        entity(as[PatchMethodSrc]) { patchMethodRequest =>
+          val maybePatchMethodSrc : Future[MethodSrcReply] =
+            (srcFetcherActor ? patchMethodRequest).mapTo[MethodSrcReply]
+          rejectEmptyResponse {
+            complete(maybePatchMethodSrc)
+          }
+        }
+      }
     }
 }
 

@@ -52,5 +52,13 @@ public class TestMainClass {
     }
   }
 
+  public void callMethodA() {
+    otherMethodToCall(3);
+    otherMethodToCall(4);
+  }
+
+  public int otherMethodToCall(int i) {
+    return i + 2;
+  }
 
 }
