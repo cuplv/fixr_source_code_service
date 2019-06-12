@@ -6,8 +6,9 @@ import spoon.reflect.factory.Factory
 import spoon.processing.ProcessingManager
 import spoon.support.QueueProcessingManager
 import spoon.reflect.declaration.{
-  CtExecutable, CtMethod, CtConstructor
+  CtExecutable, CtMethod, CtConstructor, CtElement
 }
+import spoon.reflect.path.CtRole
 import spoon.reflect.code.{CtInvocation, CtComment, CtStatement}
 import spoon.reflect.visitor.filter.{TypeFilter, AbstractFilter}
 import spoon.reflect.visitor.DefaultJavaPrettyPrinter
@@ -63,11 +64,12 @@ object ClassParser {
     launcher.process()
   }
 
+
   def parseAndPatchClassFile(methodKey : MethodKey,
     fileInfo : FileInfo,
     diffsToApply : Map[Int, List[CommentDiff]]) : Option[String] = {
 
-    Logger.info(s"Parsing ${fileInfo.declaringFile}")
+    Logger.debug(s"Parsing and patching ${fileInfo.declaringFile}")
 
     lazy val launcher : Launcher = new Launcher()
     val virtualFile = new VirtualFile(fileInfo.fileContent,
@@ -90,8 +92,13 @@ object ClassParser {
           override def matches(executable : CtExecutable[_]) : Boolean = {
             if (executable.isInstanceOf[CtMethod[_]] ||
               executable.isInstanceOf[CtConstructor[_]]) {
-              val fileName = executable.getPosition.getFile.getName
+              val fileName = fileInfo.declaringFile
               val startLine = executable.getPosition.getLine
+
+              // Logger.debug(s"${methodKey.declaringFile} == ${fileName} \n" +
+              //   s"${methodKey.startLine} - ${startLine} < 5 \n" +
+              //   s"${methodKey.methodName} == ${executable.getSimpleName}")
+              // Logger.debug(s"Checking ${methodKey.methodName}")
 
               methodKey.declaringFile == fileName &&
               math.abs(methodKey.startLine - startLine) < 5 &&
@@ -102,7 +109,10 @@ object ClassParser {
     // Method invocations that have a match with a diff entry
     val methodDeclRes = methodDecls.toList match {
       case x :: xs => Some(x)
-      case Nil => None
+      case Nil => {
+        Logger.debug(s"Did not find the method ${methodKey.methodName}")
+        None
+      }
     }
 
     methodDeclRes match {
@@ -116,7 +126,6 @@ object ClassParser {
               diffsToApply.contains(invocation.getPosition.getLine)
             }
           })
-        invocations.toList
 
         // Insert the comments
         invocations.forEach(invocation => {
@@ -125,20 +134,10 @@ object ClassParser {
 
           diffsAtLineRes match {
             case Some(diffsAtLine) => {
-              diffsAtLine.forEach(commentDiff => {
-                val commentType =
-                  if (commentDiff.isMultiLine)
-                    CtComment.CommentType.INLINE
-                  else
-                    CtComment.CommentType.BLOCK
-
-                val comment = factory.Code().createComment(commentDiff.diffText,
-                  commentType)
-
-                // Add the comment to the first statement parent
-                val parent = invocation.getParent(classOf[CtStatement])
-                parent.addComment(comment)
-              })
+              diffsAtLine.forEach( commentDiff =>
+                addComment(factory, commentDiff,
+                  invocation, methodDecl)
+              )
             }
             case None => {
               Logger.debug("Not found diff at line ${line}")
@@ -147,10 +146,83 @@ object ClassParser {
           }
         })
 
-        // Return the modified comment
+        // Insert comments at the top or bottom of the method
+        val rootsAndTails = diffsToApply.get(0)
+        rootsAndTails match {
+          case Some(diffsAtLine) => {
+            diffsAtLine.forEach( commentDiff => {
+              Logger.debug(s"O-line diff entry: ${commentDiff}")
+
+              if (commentDiff.isMultiLine) {
+                val body = methodDecl.getBody()
+                val comment = getComment(factory, commentDiff)
+                body.insertBegin(comment)
+              } else {
+                val body = methodDecl.getBody()
+                val comment = getComment(factory, commentDiff)
+                body.insertEnd(comment)
+              }
+            })
+          }
+          case None => None
+        }
+
+        // Return the string representation of the method
         Some(ClassParser.printMethodDecl(env, methodDecl))
       }
-      case None => None
+      case None => {
+        None
+      }
+    }
+  }
+
+// use null -- dirty, but otherwise we get:
+// java.lang.ClassCastException: spoon.support.reflect.code.CtInvocationImpl cannot be cast to scala.runtime.BoxedUnit
+
+  def getComment(factory : Factory, commentDiff : CommentDiff) = {
+    val commentType =
+      if (commentDiff.isMultiLine)
+        CtComment.CommentType.BLOCK
+      else
+        CtComment.CommentType.INLINE
+
+    factory.Code().createComment(commentDiff.diffText, commentType)
+  }
+
+  def addComment(factory : Factory,
+    commentDiff : CommentDiff,
+    element : CtElement, // use null, otherwise we get a nasty exception
+    topElement : CtElement) : Unit = {
+    val comment = getComment(factory, commentDiff)
+
+    // Add the comment to the first (real) statement
+    if (element != null) {
+      def findParent(statement : CtElement) : CtElement = {
+        if (statement != null &&
+          statement.getRoleInParent() != null &&
+          statement.getRoleInParent() == CtRole.STATEMENT) {
+          Logger.debug(s"${statement}")
+          statement
+        } else if (statement == null) {
+          null
+        } else {
+          findParent(statement.getParent())
+        }
+      }
+
+      val statement = findParent(element)
+
+      // val parent = invocation.getParent(classOf[CtStatement])
+      if (statement != null) {
+        // Logger.debug(s"Adding comment ${comment} to ${statement}")
+        statement.addComment(comment)
+      } else {
+        Logger.debug(s"Adding comment ${comment} to ${topElement}")
+        topElement.addComment(comment)
+      }
+    } else {
+      // Logger.debug(s"Adding comment ${comment} to ${topElement}")
+      topElement.addComment(comment)
     }
   }
 

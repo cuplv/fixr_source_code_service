@@ -23,7 +23,7 @@ class TestSrcFetcherRoutes
     with ScalatestRouteTest
     with SrcFetcherRoutes {
 
-  implicit val routeTestTimeout = RouteTestTimeout(30.seconds)
+  implicit val routeTestTimeout = RouteTestTimeout(60.seconds)
 
   override val srcFetcherActor: ActorRef =
     system.actorOf(SrcFetcherActor.props, "srcFetcherActor")
@@ -124,15 +124,28 @@ class TestSrcFetcherRoutes
     "patch correctly" in {
       val findMethodSrc = FindMethodSrc("https://github.com/square/retrofit",
         "684f975",
-        "OkHttpCall.java",
-        294,
-        "read")
+        "ParameterHandler.java",
+        58,
+        "apply")
 
       val diffsToApply =
         List(SourceDiff("+",
-          DiffEntry(296, "read", "banana"),
+          DiffEntry(60, "read", "banana"),
           List(DiffEntry(0, "exit", ""))
         ))
+
+      val expectedPatch = """@java.lang.Override
+void apply(retrofit2.RequestBuilder builder, @javax.annotation.Nullable
+java.lang.Object value) {
+    retrofit2.Utils.checkNotNull(value, "@Url parameter is null.");
+    /* [0] After this method method call (read)
+    You should invoke the following methods:
+    banana
+     */
+    builder.setRelativeUrl(value);
+    // [0] The change should ends here (before calling the method exit)
+}"""
+      val expectedRes = MethodSrcReply((0, Set(expectedPatch)), "")
 
       val patchMethodSrc = PatchMethodSrc(findMethodSrc, diffsToApply)
       val entity = Marshal(patchMethodSrc).to[MessageEntity].futureValue
@@ -141,7 +154,10 @@ class TestSrcFetcherRoutes
       request ~> routes ~> check {
         status should ===(StatusCodes.OK)
         contentType should ===(ContentTypes.`application/json`)
-        responseAs[MethodSrcReply] should ===(MethodSrcReply((-1,Set()),"Empty github url"))
+        responseAs[MethodSrcReply].res._1 should ===(expectedRes.res._1)
+
+        (responseAs[MethodSrcReply].res._2 ==(expectedRes.res._2)) should be (true)
+        responseAs[MethodSrcReply] should be (expectedRes)
       }
     }
   }

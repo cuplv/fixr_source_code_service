@@ -102,6 +102,8 @@ class SrcFetcherActor extends Actor with ActorLogging {
 
               val commentDiffs = CreatePatchText.processDiffs(diffsToApply)
 
+              Logger.debug(s"Transformed commentDiffs: ${commentDiffs}")
+
               val methodKey = MethodKey(findMethodSrc.githubUrl,
                 findMethodSrc.commitId,
                 findMethodSrc.declaringFile,
@@ -231,7 +233,7 @@ object CreatePatchText {
       val diffText =
         if (isEntry) {
           val entryName = s"[${sourceDiffNum}] After this method method call (${diffEntry.entryName})"
-          val changeExplanation = s"Yous should ${action} the following methods\n: ${diffEntry.what}"
+          val changeExplanation = s"You should ${action} the following methods:\n${diffEntry.what}"
           s"${entryName}\n${changeExplanation}"
         } else {
           s"[${sourceDiffNum}] The change should ends here (before calling the method ${diffEntry.entryName})"

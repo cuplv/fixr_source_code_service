@@ -31,13 +31,18 @@ class SrcFinder(sourceCodeMap : SourceCodeMap)  {
   def patchMethod(methodKey : MethodKey,
     commentsDiff : Map[Int, List[CommentDiff]]) : Option[String] = {
 
+    Logger.debug(s"About to try patching: ${methodKey}")
+
     val fileInfoTmp = sourceCodeMap.lookupFileInfo(methodKey)
 
     val fileInfo = fileInfoTmp match {
       case Some(x) => fileInfoTmp
       case None => {
         // try to process the repo and get the file again
+        Logger.debug(s"Did not source code in cache for: ${methodKey}")
         val repoProcessed = processRepo(methodKey, true)
+
+        Logger.debug(s"Lookup ${methodKey} again after insert...")
         sourceCodeMap.lookupFileInfo(methodKey)
       }
     }
@@ -85,6 +90,9 @@ class SrcFinder(sourceCodeMap : SourceCodeMap)  {
                     methodKey.declaringFile,
                     filePath,
                     fileContent)
+
+                  // Insert the association of method and source code
+                  sourceCodeMap.insertFileInfo(methodKey, fileInfo)
 
                   ClassParser.parseClassFile(sourceCodeMap,fileInfo)
 

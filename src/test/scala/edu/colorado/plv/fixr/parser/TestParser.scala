@@ -58,12 +58,11 @@ class TestParser extends FlatSpec with Matchers with BeforeAndAfter {
   }
 
   before {
-    val url = getClass.getResource("/TestMainClass.java")
+    val url = getClass.getResource(s"/${sourceName}")
     val file = new File(url.toURI())
 
     if (! Files.exists(dstFile.toPath()))
         Files.copy(file.toPath(), dstFile.toPath())
-
     sourceCodeMap.clear()
 
     val fileContent = new String(Files.readAllBytes(dstFile.toPath()))
@@ -72,8 +71,7 @@ class TestParser extends FlatSpec with Matchers with BeforeAndAfter {
       dstFile.toPath().toString(),
       fileContent)
 
-    ClassParser.parseClassFile(sourceCodeMap,
-      fileInfo)
+    ClassParser.parseClassFile(sourceCodeMap, fileInfo)
   }
 
   after {

@@ -52,15 +52,9 @@ public class TestMainClass {
     }
   }
 
-
-  public void callMethod() {
-    int i = 0;
-
-    i = otherMethodToCall(3) + intMethod("cavallo");
-
-    if (otherMethodToCall(2) == 3) {
-      i = 2;
-    }
+  public void callMethodA() {
+    otherMethodToCall(3);
+    otherMethodToCall(4);
   }
 
   public int otherMethodToCall(int i) {

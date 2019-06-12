@@ -4,59 +4,85 @@ import org.scalatest._
 import java.io.File
 import java.nio.file.{Files}
 
-import edu.colorado.plv.fixr.storage.{MethodKey, MemoryMap}
-import edu.colorado.plv.fixr.service.SrcFetcherActor.{SourceDiff, DiffEntry}
+import edu.colorado.plv.fixr.storage.{MethodKey, MemoryMap, FileInfo}
+
 
 class TestPatch extends FlatSpec with Matchers with BeforeAndAfter {
 
   val githubUrl = "https://github.com/cuplv/fixr_source_code_service.git"
-  val dstFile = new File("TestMainClass.java")
+  val sourceName = "TestMainClass.java"
+  val dstFile = new File(sourceName)
   val commitId = "commit_id"
+
   val sourceCodeMap = new MemoryMap()
+  var fileInfo : Option[FileInfo] = None
+
 
   "The patcher" should  "patch the callMethod" in {
-    val keyCallMethod = MethodKey(githubUrl,
-      commitId,
-      "TestMainClass.java",
-      56,
-      "callMethod")
+    val methodKey = MethodKey(githubUrl, commitId,sourceName,
+      55, "callMethodA")
 
-    val diffsToApply =
-      List(SourceDiff("+",
-        DiffEntry(59, "callMethod", "i = otherMethodToCall"),
-        List(DiffEntry(0, "exit", ""))
-      ))
+    // import edu.colorado.plv.fixr.service.SrcFetcherActor.{SourceDiff, DiffEntry}
+    // val diffsToApply =
+    //   List(SourceDiff("+",
+    //     DiffEntry(56, "otherMethodToCall", "otherMethodToCall"),
+    //     List(
+    //       DiffEntry(57, "otherMethodToCall", "otherMethodToCall"),
+    //     )
+    //   ))
+    //     val commentDiffs = CreatePatchText.processDiffs(diffsToApply)
 
-    val patchCode = """public void callMethod() {
-    int i = 0;
+    val commentDiffs = Map (
+      56 -> List(
+        CommentDiff(1, 56, """[1] After this method call (otherMethodCall(3))
+You should invoke the following methods
+intMethod(3)""", true, true)),
+        57 -> List(
+          CommentDiff(1, 57,
+        "[1] The change should ends here (before calling the method otherMethodCall(4))",
+        false, false),
+        ))
 
-    i = intMethod("cavallo");
-  }"""
+    val patchCode = """public void callMethodA() {
+    /* [1] After this method call (otherMethodCall(3))
+    You should invoke the following methods
+    intMethod(3)
+     */
+    otherMethodToCall(3);
+    // [1] The change should ends here (before calling the method otherMethodCall(4))
+    otherMethodToCall(4);
+}"""
 
 
-    // val patchRes = ClassParser.parseAndPatchClassFile(githubUrl,
-    //   sourceCodeMap,
-    //   dstFile.getPath(),
-    //   keyCallMethod,
-    //   diffsToApply)
+    val res = fileInfo match {
+      case Some(f) => {
+        ClassParser.parseAndPatchClassFile(methodKey, f, commentDiffs)
+      }
+      case None => None
+    }
 
-    // patchRes match {
-    //   case Some( code ) => {
-    //     code should be (Some(patchCode))
-    //   }
-    //   case None => patchRes should not be None
-    // }
+    res should be (Some(patchCode))
   }
 
   before {
-    val url = getClass.getResource("/TestMainClass.java")
+    val url = getClass.getResource("/" + sourceName)
     val file = new File(url.toURI())
 
     if (! Files.exists(dstFile.toPath()))
         Files.copy(file.toPath(), dstFile.toPath())
+
     sourceCodeMap.clear()
+
+    val fileContent = new String(Files.readAllBytes(dstFile.toPath()))
+    fileInfo = Some(FileInfo(githubUrl, commitId,
+      sourceName,
+      dstFile.toPath().toString(),
+      fileContent))
   }
 
   after {
+  }
+
+  def callPatch() = {
   }
 }
