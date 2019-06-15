@@ -130,50 +130,50 @@ class SrcFetcherActor extends Actor with ActorLogging {
   /** Post-process the found source code (e.g. indenting it)
     *
     */
-  private def prettify(lookupResult : (Int,Set[String])) : (Int,Set[String]) = {
-    lookupResult match {
-      case (opt_value, sourceCodeSet) =>
-        (opt_value, sourceCodeSet.map( elem => {
-          val formatterOptions = JavaFormatterOptions.defaultOptions()
-          val formatter = new Formatter(formatterOptions)
+  // private def prettify(lookupResult : (Int,Set[String])) : (Int,Set[String]) = {
+  //   lookupResult match {
+  //     case (opt_value, sourceCodeSet) =>
+  //       (opt_value, sourceCodeSet.map( elem => {
+  //         val formatterOptions = JavaFormatterOptions.defaultOptions()
+  //         val formatter = new Formatter(formatterOptions)
 
-          // Builds the dummy class
-          val buf : StringBuffer = new StringBuffer("class Dummy {\n")
-          buf.append(elem)
-          buf.append("\n}")
+  //         // Builds the dummy class
+  //         val buf : StringBuffer = new StringBuffer("class Dummy {\n")
+  //         buf.append(elem)
+  //         buf.append("\n}")
 
-          val formattedWithDummy = formatter.formatSource(buf.toString)
+  //         val formattedWithDummy = formatter.formatSource(buf.toString)
 
-          // Remove the dummy string and fix the indentation
-          def removeDummy(buf : StringBuffer,
-            list : List[String],
-            indentToRemove : Int) : StringBuffer = {
-            list match {
-              case line :: xs => {
-                val newLine =
-                if (line.length > indentToRemove) {
-                  line.substring(indentToRemove, line.length())
-                } else {
-                  line // may be empty
-                }
-                buf.append(newLine)
-                buf.append("\n")
+  //         // Remove the dummy string and fix the indentation
+  //         def removeDummy(buf : StringBuffer,
+  //           list : List[String],
+  //           indentToRemove : Int) : StringBuffer = {
+  //           list match {
+  //             case line :: xs => {
+  //               val newLine =
+  //               if (line.length > indentToRemove) {
+  //                 line.substring(indentToRemove, line.length())
+  //               } else {
+  //                 line // may be empty
+  //               }
+  //               buf.append(newLine)
+  //               buf.append("\n")
 
-              removeDummy(buf, xs, indentToRemove)
-              }
-              case Nil => buf
-            }
-          }
+  //             removeDummy(buf, xs, indentToRemove)
+  //             }
+  //             case Nil => buf
+  //           }
+  //         }
 
-          val strList : List[String] =
-            formattedWithDummy.lines.foldLeft(List[String]()) ((r,c) => c :: r).reverse
-          val sliced = strList.slice(1,strList.length-1)
+  //         val strList : List[String] =
+  //           formattedWithDummy.lines.foldLeft(List[String]()) ((r,c) => c :: r).reverse
+  //         val sliced = strList.slice(1,strList.length-1)
 
-          removeDummy(new StringBuffer(),
-            sliced, 2).toString()
-        }))
-    }
-  }
+  //         removeDummy(new StringBuffer(),
+  //           sliced, 2).toString()
+  //       }))
+  //   }
+  // }
 
   private def validateData(findMethodSrc : FindMethodSrc) :
       Option[MethodSrcReply] = {
