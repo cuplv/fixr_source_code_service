@@ -10,8 +10,11 @@ import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.{Matchers, WordSpec}
 import scala.concurrent.duration._
 
-import edu.colorado.plv.fixr.service.SrcFetcherActor.{FindMethodSrc,
-  MethodSrcReply}
+import edu.colorado.plv.fixr.service.SrcFetcherActor.{
+  FindMethodSrc,
+  SourceDiff, DiffEntry, PatchMethodSrc,
+  MethodSrcReply
+}
 
 class TestSrcFetcherRoutes
     extends WordSpec
@@ -20,7 +23,7 @@ class TestSrcFetcherRoutes
     with ScalatestRouteTest
     with SrcFetcherRoutes {
 
-  implicit val routeTestTimeout = RouteTestTimeout(30.seconds)
+  implicit val routeTestTimeout = RouteTestTimeout(60.seconds)
 
   override val srcFetcherActor: ActorRef =
     system.actorOf(SrcFetcherActor.props, "srcFetcherActor")
@@ -33,14 +36,14 @@ class TestSrcFetcherRoutes
         "", 1, "")
       val entity = Marshal(findMethodSrc).to[MessageEntity].futureValue
 
-      val request = HttpRequest(uri = "/src").withEntity(entity)
+      val request = Post(uri = "/src").withEntity(entity)
 
       request ~> routes ~> check {
         status should ===(StatusCodes.OK)
 
         contentType should ===(ContentTypes.`application/json`)
 
-        responseAs[MethodSrcReply] should ===(MethodSrcReply(Set(),"Empty github url"))
+        responseAs[MethodSrcReply] should ===(MethodSrcReply((-1,Set()),"Empty github url"))
       }
     }
 
@@ -50,14 +53,15 @@ class TestSrcFetcherRoutes
         "Pippo.java", 1, "int m()")
       val entity = Marshal(findMethodSrc).to[MessageEntity].futureValue
 
-      val request = HttpRequest(uri = "/src").withEntity(entity)
+      val request = Post(uri = "/src").withEntity(entity)
 
       request ~> routes ~> check {
         status should ===(StatusCodes.OK)
 
         contentType should ===(ContentTypes.`application/json`)
 
-        responseAs[MethodSrcReply] should ===(MethodSrcReply(Set(),"Cannot find the source code"))
+        responseAs[MethodSrcReply] should ===(MethodSrcReply((-1,Set()),
+          "Cannot find the source code"))
       }
     }
 
@@ -69,7 +73,7 @@ class TestSrcFetcherRoutes
         "createRawCall")
       val entity = Marshal(findMethodSrc).to[MessageEntity].futureValue
 
-      val request = HttpRequest(uri = "/src").withEntity(entity)
+      val request = Post(uri = "/src").withEntity(entity)
 
       request ~> routes ~> check {
         status should ===(StatusCodes.OK)
@@ -84,7 +88,7 @@ class TestSrcFetcherRoutes
     }
     return call;
   }"""
-        responseAs[MethodSrcReply] should ===(MethodSrcReply(Set(createRawCall),""))
+        responseAs[MethodSrcReply] should ===(MethodSrcReply((189,Set(createRawCall)),""))
       }
     }
 
@@ -96,7 +100,7 @@ class TestSrcFetcherRoutes
         "read")
       val entity = Marshal(findMethodSrc).to[MessageEntity].futureValue
 
-      val request = HttpRequest(uri = "/src").withEntity(entity)
+      val request = Post(uri = "/src").withEntity(entity)
 
       request ~> routes ~> check {
         status should ===(StatusCodes.OK)
@@ -113,11 +117,49 @@ class TestSrcFetcherRoutes
           }
         }"""
 
-        responseAs[MethodSrcReply] should ===(MethodSrcReply(Set(readRawCall),""))
+        responseAs[MethodSrcReply] should ===(MethodSrcReply((294,Set(readRawCall)),""))
       }
     }
 
-  }
+    "patch correctly" in {
+      val findMethodSrc = FindMethodSrc("https://github.com/square/retrofit",
+        "684f975",
+        "ParameterHandler.java",
+        58,
+        "apply")
 
+      val diffsToApply =
+        List(SourceDiff("+",
+          DiffEntry(60, "read", "banana"),
+          List(DiffEntry(0, "exit", ""))
+        ))
+
+      val expectedPatch = """@java.lang.Override
+void apply(retrofit2.RequestBuilder builder, @javax.annotation.Nullable
+java.lang.Object value) {
+    retrofit2.Utils.checkNotNull(value, "@Url parameter is null.");
+    /* [0] After this method method call (read)
+    You should invoke the following methods:
+    banana
+     */
+    builder.setRelativeUrl(value);
+    // [0] The change should ends here (before calling the method exit)
+}"""
+      val expectedRes = MethodSrcReply((0, Set(expectedPatch)), "")
+
+      val patchMethodSrc = PatchMethodSrc(findMethodSrc, diffsToApply)
+      val entity = Marshal(patchMethodSrc).to[MessageEntity].futureValue
+      val request = Post(uri = "/patch").withEntity(entity)
+
+      request ~> routes ~> check {
+        status should ===(StatusCodes.OK)
+        contentType should ===(ContentTypes.`application/json`)
+        responseAs[MethodSrcReply].res._1 should ===(expectedRes.res._1)
+
+        (responseAs[MethodSrcReply].res._2 ==(expectedRes.res._2)) should be (true)
+        responseAs[MethodSrcReply] should be (expectedRes)
+      }
+    }
+  }
 
 }
