@@ -41,9 +41,6 @@ object SrcFetcherActor {
   final case class MethodSrcReply(res : (Int,Set[String]),
     errorDesc : String)
 
-  final case class PatchReply(res : String, errorDesc : String)
-
-
   def props : Props = Props[SrcFetcherActor]
 }
 
