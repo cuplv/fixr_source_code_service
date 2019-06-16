@@ -110,8 +110,11 @@ class SrcFetcherActor extends Actor with ActorLogging {
               val patchRes = finder.patchMethod(methodKey, commentDiffs)
 
               patchRes match {
-                case Some(lookupResult) =>
-                  sender() ! MethodSrcReply((0, Set(lookupResult)), "")
+                case Some((patchText, filePath)) =>
+                  // Hack --- should change the message
+                  sender() ! MethodSrcReply(
+                    (0, Set(patchText, filePath)),
+                    "")
                 case None =>
                   sender() ! MethodSrcReply((-1, Set()),
                     "Cannot find the source code")

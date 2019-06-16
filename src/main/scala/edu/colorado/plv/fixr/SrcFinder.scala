@@ -29,7 +29,7 @@ class SrcFinder(sourceCodeMap : SourceCodeMap)  {
   }
 
   def patchMethod(methodKey : MethodKey,
-    commentsDiff : Map[Int, List[CommentDiff]]) : Option[String] = {
+    commentsDiff : Map[Int, List[CommentDiff]]) : Option[(String,String)] = {
 
     Logger.debug(s"About to try patching: ${methodKey}")
 
@@ -50,7 +50,15 @@ class SrcFinder(sourceCodeMap : SourceCodeMap)  {
     fileInfo match {
       case Some(fileInfo) => {
         // Patch the file
-        ClassParser.parseAndPatchClassFile(methodKey, fileInfo, commentsDiff)
+        Logger.debug(s"Method is in the file ${fileInfo.filePathInRepo}")
+
+        val patch = ClassParser.parseAndPatchClassFile(methodKey,
+          fileInfo, commentsDiff)
+
+        patch match {
+          case Some(patchText) => Some((patchText, fileInfo.filePathInRepo))
+          case None => None
+        }
       }
       case None => None
     }

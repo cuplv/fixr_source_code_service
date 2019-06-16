@@ -145,7 +145,10 @@ java.lang.Object value) {
     builder.setRelativeUrl(value);
     // [0] The change should ends here (before calling the method exit)
 }"""
-      val expectedRes = MethodSrcReply((0, Set(expectedPatch)), "")
+      val pathInGit = "retrofit/src/main/java/retrofit2/ParameterHandler.java"
+      val expectedRes = MethodSrcReply(
+        (0,Set(expectedPatch,pathInGit)),
+        "")
 
       val patchMethodSrc = PatchMethodSrc(findMethodSrc, diffsToApply)
       val entity = Marshal(patchMethodSrc).to[MessageEntity].futureValue
@@ -155,7 +158,8 @@ java.lang.Object value) {
         status should ===(StatusCodes.OK)
         contentType should ===(ContentTypes.`application/json`)
         responseAs[MethodSrcReply].res._1 should ===(expectedRes.res._1)
-
+        // Useful for debug --- not in the test
+        // (println (responseAs[MethodSrcReply].res._2)) should be (())
         (responseAs[MethodSrcReply].res._2 ==(expectedRes.res._2)) should be (true)
         responseAs[MethodSrcReply] should be (expectedRes)
       }

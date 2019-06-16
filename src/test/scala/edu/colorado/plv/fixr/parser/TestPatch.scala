@@ -22,16 +22,6 @@ class TestPatch extends FlatSpec with Matchers with BeforeAndAfter {
     val methodKey = MethodKey(githubUrl, commitId,sourceName,
       55, "callMethodA")
 
-    // import edu.colorado.plv.fixr.service.SrcFetcherActor.{SourceDiff, DiffEntry}
-    // val diffsToApply =
-    //   List(SourceDiff("+",
-    //     DiffEntry(56, "otherMethodToCall", "otherMethodToCall"),
-    //     List(
-    //       DiffEntry(57, "otherMethodToCall", "otherMethodToCall"),
-    //     )
-    //   ))
-    //     val commentDiffs = CreatePatchText.processDiffs(diffsToApply)
-
     val commentDiffs = Map (
       56 -> List(
         CommentDiff(1, 56, """[1] After this method call (otherMethodCall(3))
