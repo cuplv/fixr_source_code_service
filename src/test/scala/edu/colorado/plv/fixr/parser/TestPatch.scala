@@ -29,7 +29,7 @@ You should invoke the following methods
 intMethod(3)""", true, true)),
         57 -> List(
           CommentDiff(1, 57,
-        "[1] The change should ends here (before calling the method otherMethodCall(4))",
+        "[1] The change should end here (before calling the method otherMethodCall(4))",
         false, false),
         ))
 
@@ -39,7 +39,7 @@ intMethod(3)""", true, true)),
     intMethod(3)
      */
     otherMethodToCall(3);
-    // [1] The change should ends here (before calling the method otherMethodCall(4))
+    // [1] The change should end here (before calling the method otherMethodCall(4))
     otherMethodToCall(4);
 }"""
 

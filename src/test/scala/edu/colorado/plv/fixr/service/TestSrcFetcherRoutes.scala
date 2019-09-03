@@ -143,7 +143,7 @@ java.lang.Object value) {
     banana
      */
     builder.setRelativeUrl(value);
-    // [0] The change should ends here (before calling the method exit)
+    // [0] The change should end here (before calling the method exit)
 }"""
       val pathInGit = "retrofit/src/main/java/retrofit2/ParameterHandler.java"
       val expectedRes = MethodSrcReply(

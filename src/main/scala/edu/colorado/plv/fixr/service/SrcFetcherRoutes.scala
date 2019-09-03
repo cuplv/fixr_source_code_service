@@ -29,7 +29,7 @@ trait SrcFetcherRoutes extends JsonSupport {
 
   // TODO: set the timeout via config file
   // implicit lazy val timeout = ConfigFactory.load().getDuration("akka.http.server.request-timeout") // Timeout(60.seconds)
-  implicit lazy val timeout = Timeout(60.seconds)
+  implicit lazy val timeout = Timeout(120.seconds)
 
   lazy val srcFetcherRoutes: Route = 
     path("src") {

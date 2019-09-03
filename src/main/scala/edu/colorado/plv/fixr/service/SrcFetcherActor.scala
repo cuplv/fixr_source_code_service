@@ -236,7 +236,7 @@ object CreatePatchText {
           val changeExplanation = s"You should ${action} the following methods:\n${diffEntry.what}"
           s"${entryName}\n${changeExplanation}"
         } else {
-          s"[${sourceDiffNum}] The change should ends here (before calling the method ${diffEntry.entryName})"
+          s"[${sourceDiffNum}] The change should end here (before calling the method ${diffEntry.entryName})"
         }
 
 
