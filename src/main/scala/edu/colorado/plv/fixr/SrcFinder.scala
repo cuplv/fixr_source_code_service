@@ -56,7 +56,13 @@ class SrcFinder(sourceCodeMap : SourceCodeMap)  {
           fileInfo, commentsDiff)
 
         patch match {
-          case Some(patchText) => Some((patchText, fileInfo.filePathInRepo))
+          case Some(patchText) => {
+            require(! (fileInfo == null))
+            require(! (fileInfo.filePathInRepo == null))
+            require(! (patchText == null))
+
+            Some((patchText, fileInfo.filePathInRepo))
+          }
           case None => None
         }
       }
