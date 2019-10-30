@@ -10,8 +10,11 @@ import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.{Matchers, WordSpec}
 import scala.concurrent.duration._
 
-import edu.colorado.plv.fixr.service.SrcFetcherActor.{FindMethodSrc,
-  MethodSrcReply}
+import edu.colorado.plv.fixr.service.SrcFetcherActor.{
+  FindMethodSrc,
+  SourceDiff, DiffEntry, PatchMethodSrc,
+  MethodSrcReply
+}
 
 class TestSrcFetcherRoutes
     extends WordSpec
@@ -20,7 +23,7 @@ class TestSrcFetcherRoutes
     with ScalatestRouteTest
     with SrcFetcherRoutes {
 
-  implicit val routeTestTimeout = RouteTestTimeout(30.seconds)
+  implicit val routeTestTimeout = RouteTestTimeout(60.seconds)
 
   override val srcFetcherActor: ActorRef =
     system.actorOf(SrcFetcherActor.props, "srcFetcherActor")
@@ -118,7 +121,49 @@ class TestSrcFetcherRoutes
       }
     }
 
-  }
+    "patch correctly" in {
+      val findMethodSrc = FindMethodSrc("https://github.com/square/retrofit",
+        "684f975",
+        "ParameterHandler.java",
+        58,
+        "apply")
 
+      val diffsToApply =
+        List(SourceDiff("+",
+          DiffEntry(60, "read", "banana"),
+          List(DiffEntry(0, "exit", ""))
+        ))
+
+      val expectedPatch = """@java.lang.Override
+void apply(retrofit2.RequestBuilder builder, @javax.annotation.Nullable
+java.lang.Object value) {
+    retrofit2.Utils.checkNotNull(value, "@Url parameter is null.");
+    /* [0] After this method method call (read)
+    You should invoke the following methods:
+    banana
+     */
+    builder.setRelativeUrl(value);
+    // [0] The change should end here (before calling the method exit)
+}"""
+      val pathInGit = "retrofit/src/main/java/retrofit2/ParameterHandler.java"
+      val expectedRes = MethodSrcReply(
+        (0,Set(expectedPatch,pathInGit)),
+        "")
+
+      val patchMethodSrc = PatchMethodSrc(findMethodSrc, diffsToApply)
+      val entity = Marshal(patchMethodSrc).to[MessageEntity].futureValue
+      val request = Post(uri = "/patch").withEntity(entity)
+
+      request ~> routes ~> check {
+        status should ===(StatusCodes.OK)
+        contentType should ===(ContentTypes.`application/json`)
+        responseAs[MethodSrcReply].res._1 should ===(expectedRes.res._1)
+        // Useful for debug --- not in the test
+        // (println (responseAs[MethodSrcReply].res._2)) should be (())
+        (responseAs[MethodSrcReply].res._2 ==(expectedRes.res._2)) should be (true)
+        responseAs[MethodSrcReply] should be (expectedRes)
+      }
+    }
+  }
 
 }

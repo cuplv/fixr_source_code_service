@@ -30,20 +30,40 @@ object GitHelper {
     * "Open" the github repository
     */
   def openRepo(repoClosed : RepoClosed) : Option[RepoOpened] = {
+    Logger.debug(s"Opening repo ${repoClosed.repoUri}...")
 
     try {
-      val tmpDir = Files.createTempDir()
 
-      val cloneCmd : CloneCommand =  Git.cloneRepository()
+      val repoPath  = Paths.get("/tmp",
+        repoClosed.repoUri,
+        repoClosed.commitHash,
+        ".git")
 
-      cloneCmd.setURI(repoClosed.repoUri)
-      cloneCmd.setDirectory(tmpDir)
-      cloneCmd.setCloneSubmodules(false)
-      val git : Git = cloneCmd.call()
+      Logger.debug(s"PATH ${repoPath}")
 
+      val repoGitFile = repoPath.toFile()
+      val tmpDir = repoPath.getParent().toFile()
+      Files.createParentDirs(repoGitFile)
+
+      val git : Git =
+        if (! repoGitFile.exists()) {
+          Logger.debug(s"Repo does not exists...")
+          val cloneCmd : CloneCommand =  Git.cloneRepository()
+
+          Logger.debug(s"tmp dir ${tmpDir}")
+
+          cloneCmd.setURI(repoClosed.repoUri)
+          cloneCmd.setDirectory(tmpDir)
+          cloneCmd.setCloneSubmodules(false)
+          val git : Git = cloneCmd.call()
+          git
+        } else {
+          Git.open(repoGitFile)
+        }
       // Don't care if the repo is in a detached head
       git.checkout.setName(repoClosed.commitHash).call()
 
+      Logger.debug(s"Opened repo ${repoClosed.repoUri}.")
       Some(RepoOpened(git, repoClosed.repoUri, repoClosed.commitHash))
 
     } catch {
@@ -51,6 +71,7 @@ object GitHelper {
         Logger.debug("Error creating the temporary directory")
         None
       case e : Exception =>
+        Logger.debug(s"Error opening repo ${repoClosed.repoUri}...")
         Logger.debug(e.getMessage)
         None
     }

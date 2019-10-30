@@ -1,3 +1,7 @@
+/** DO NOT USE --- it's not up to date!
+  */
+
+
 package edu.colorado.plv.fixr.parser
 
 import scala.io.Source
@@ -51,8 +55,8 @@ class MyVisitor(sourceCodeMap : SourceCodeMap,
             s"\tSource end: $sourceEnd"
           )
 
-
           sourceCodeMap.insertMethod(new MethodKey(gitHubUrl,
+            "",
             fileName,
             startLine, simpleName),
             methodText)

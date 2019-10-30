@@ -6,6 +6,7 @@ import edu.colorado.plv.fixr.Logger
 
 case class KeyNoLine(
   repoUrl : String,
+  commitId : String,
   declaringFile : String,
   methodName : String)
 
@@ -15,15 +16,24 @@ class MemoryMap extends SourceCodeMap {
   val map : Map[KeyNoLine, Map[Int, Set[String]]] =
     new HashMap[KeyNoLine, Map[Int, Set[String]]]()
 
-  def lookupLineMap(key : MethodKey) : Option[Map[Int, Set[String]]] = {
-    val keyNoLine =  KeyNoLine(key.repoUrl,
+  val mapFiles : Map[MethodKey, FileInfo] =
+    new HashMap[MethodKey, FileInfo]()
+
+  val maxLines = 4
+
+  def getKeyNoLine(key : MethodKey) : KeyNoLine =
+    return KeyNoLine(key.repoUrl, key.commitId,
       key.declaringFile, key.methodName);
 
-      if (map.contains(keyNoLine)) {
-        Some(map(keyNoLine))
-      } else {
-        None
-      }
+
+  def lookupLineMap(key : MethodKey) : Option[Map[Int, Set[String]]] = {
+    val keyNoLine =  getKeyNoLine(key)
+
+    if (map.contains(keyNoLine)) {
+      Some(map(keyNoLine))
+    } else {
+      None
+    }
   }
 
   def lookupSet(key : MethodKey,
@@ -41,8 +51,7 @@ class MemoryMap extends SourceCodeMap {
       this.lookupLineMap(key) match {
         case Some(mapLn) => mapLn
         case None => {
-          val keyNoLine =  KeyNoLine(key.repoUrl, key.declaringFile,
-            key.methodName);
+          val keyNoLine =  getKeyNoLine(key)
           val mapLn = new HashMap[Int, Set[String]]()
           map.update(keyNoLine, mapLn)
           mapLn
@@ -88,12 +97,15 @@ class MemoryMap extends SourceCodeMap {
               optimal match {
                 case Some(opt_pair) =>
                   opt_pair match {
-                    case (opt_line, opt_set)
-                        if opt_line > current_val =>
-                      Some((startLine, methodSet))
+                    case (optimalLine, opt_set)
+                        if (math.abs(key.startLine - optimalLine)) > current_val => {
+                          Some((startLine, methodSet))
+                        }
                     case _ => Some(opt_pair)
                   }
-                case None => Some((startLine, methodSet))
+                case None => {
+                  Some((startLine, methodSet))
+                }
               }
             }
           }
@@ -113,5 +125,13 @@ class MemoryMap extends SourceCodeMap {
 
   def clear() : Unit = {
     map.clear()
+  }
+
+  def insertFileInfo(key : MethodKey, fileInfo : FileInfo) = {
+    mapFiles.update(key, fileInfo)
+  }
+
+  def lookupFileInfo(key : MethodKey) : Option[FileInfo] = {
+    mapFiles.get(key)
   }
 }

@@ -14,6 +14,8 @@ lazy val root = (project in file(".")).
     resolvers += "Jboss ops4j" at "https://repository.jboss.org/nexus/content/repositories/deprecated",
 
 
+    mainClass in (Compile, run) := Some("edu.colorado.plv.fixr.service.SrcServer"),
+
     libraryDependencies += spooncore % Compile,
     libraryDependencies += logging_backend % Compile,
     libraryDependencies += logging % Compile,
