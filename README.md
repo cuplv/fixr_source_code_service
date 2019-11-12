@@ -1,4 +1,5 @@
-# Web service component used to query source code from github repositories
+# Web service component used to query source code from github repositories [![Build Status](https://travis-ci.com/cuplv/fixr_source_code_service.svg?branch=master)](https://travis-ci.com/cuplv/fixr_source_code_service)
+
 
 The web service has the following end-points:
 
