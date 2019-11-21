@@ -2,7 +2,7 @@ package edu.colorado.plv.fixr.parser
 
 import org.scalatest._
 import java.io.File
-import java.nio.file.Files
+import java.nio.file.{Files, StandardCopyOption}
 
 import edu.colorado.plv.fixr.storage.{FileInfo, MemoryMap, MethodKey, RepoFileInfo}
 
@@ -59,7 +59,7 @@ intMethod(3)""", true, true)),
     val file = new File(url.toURI())
 
     if (! Files.exists(dstFile.toPath()))
-        Files.copy(file.toPath(), dstFile.toPath())
+        Files.copy(file.toPath(), dstFile.toPath(), StandardCopyOption.REPLACE_EXISTING)
 
     sourceCodeMap.clear()
 
