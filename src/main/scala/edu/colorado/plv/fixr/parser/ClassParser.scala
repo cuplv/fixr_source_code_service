@@ -1,16 +1,15 @@
 package edu.colorado.plv.fixr.parser
 
+import edu.colorado.plv.fixr.storage.LocalMethodKey
 import spoon.Launcher
 import spoon.compiler.Environment
 import spoon.reflect.factory.Factory
 import spoon.processing.ProcessingManager
 import spoon.support.QueueProcessingManager
-import spoon.reflect.declaration.{
-  CtExecutable, CtMethod, CtConstructor, CtElement
-}
+import spoon.reflect.declaration.{CtConstructor, CtElement, CtExecutable, CtMethod}
 import spoon.reflect.path.CtRole
-import spoon.reflect.code.{CtInvocation, CtComment, CtStatement}
-import spoon.reflect.visitor.filter.{TypeFilter, AbstractFilter}
+import spoon.reflect.code.{CtComment, CtInvocation}
+import spoon.reflect.visitor.filter.{AbstractFilter, TypeFilter}
 import spoon.reflect.visitor.DefaultJavaPrettyPrinter
 //import spoon.reflect.visitor.SniperJavaPrettyPrinter
 import spoon.support.compiler.{VirtualFile}
@@ -49,11 +48,9 @@ object ClassParser {
     val processingManager : ProcessingManager =
       new QueueProcessingManager(factory)
 
-    val method_processor = new MethodProcessor(fileInfo.repoUrl,
-      sourceCodeMap, fileInfo, factory)
+    val method_processor = new MethodProcessor(sourceCodeMap, fileInfo, factory)
     processingManager.addProcessor(method_processor)
-    val constructor_processor = new ConstructorProcessor(fileInfo.repoUrl,
-      sourceCodeMap, fileInfo, factory)
+    val constructor_processor = new ConstructorProcessor(sourceCodeMap, fileInfo, factory)
     processingManager.addProcessor(constructor_processor)
 
     val elements =
@@ -65,7 +62,7 @@ object ClassParser {
   }
 
 
-  def parseAndPatchClassFile(methodKey : MethodKey,
+  def parseAndPatchClassFile(methodKey : LocalMethodKey,
     fileInfo : FileInfo,
     diffsToApply : Map[Int, List[CommentDiff]]) : Option[String] = {
 

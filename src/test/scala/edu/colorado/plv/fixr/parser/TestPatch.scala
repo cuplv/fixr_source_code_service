@@ -2,9 +2,9 @@ package edu.colorado.plv.fixr.parser
 
 import org.scalatest._
 import java.io.File
-import java.nio.file.{Files}
+import java.nio.file.Files
 
-import edu.colorado.plv.fixr.storage.{MethodKey, MemoryMap, FileInfo}
+import edu.colorado.plv.fixr.storage.{FileInfo, MemoryMap, MethodKey, RepoFileInfo}
 
 
 class TestPatch extends FlatSpec with Matchers with BeforeAndAfter {
@@ -46,7 +46,7 @@ intMethod(3)""", true, true)),
 
     val res = fileInfo match {
       case Some(f) => {
-        ClassParser.parseAndPatchClassFile(methodKey, f, commentDiffs)
+        ClassParser.parseAndPatchClassFile(methodKey.localMethodKey, f, commentDiffs)
       }
       case None => None
     }
@@ -64,7 +64,7 @@ intMethod(3)""", true, true)),
     sourceCodeMap.clear()
 
     val fileContent = new String(Files.readAllBytes(dstFile.toPath()))
-    fileInfo = Some(FileInfo(githubUrl, commitId,
+    fileInfo = Some(RepoFileInfo(githubUrl, commitId,
       sourceName,
       dstFile.toPath().toString(),
       fileContent))

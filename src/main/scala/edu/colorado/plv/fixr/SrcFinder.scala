@@ -1,11 +1,9 @@
 package edu.colorado.plv.fixr
 
-import java.io.{File, InputStream, FileOutputStream}
-import java.nio.file.{Files, Paths, Path, StandardCopyOption}
+import java.io.InputStream
 import org.eclipse.jgit.treewalk.filter.PathSuffixFilter
-
-import edu.colorado.plv.fixr.storage.{MethodKey, SourceCodeMap, FileInfo}
-import edu.colorado.plv.fixr.github.{RepoClosed, RepoOpened, GitHelper}
+import edu.colorado.plv.fixr.storage._
+import edu.colorado.plv.fixr.github.{GitHelper, RepoClosed}
 import edu.colorado.plv.fixr.parser.{ClassParser, CommentDiff}
 
 
@@ -28,14 +26,11 @@ class SrcFinder(sourceCodeMap : SourceCodeMap)  {
     }
   }
 
-  def patchMethod(methodKey : MethodKey,
-    commentsDiff : Map[Int, List[CommentDiff]]) : Option[(String,String)] = {
-
+  def retrieveFile(methodKey: MethodKey): Option[FileInfo] = {
     Logger.debug(s"About to try patching: ${methodKey}")
-
     val fileInfoTmp = sourceCodeMap.lookupFileInfo(methodKey)
 
-    val fileInfo = fileInfoTmp match {
+    fileInfoTmp match {
       case Some(x) => fileInfoTmp
       case None => {
         // try to process the repo and get the file again
@@ -46,25 +41,23 @@ class SrcFinder(sourceCodeMap : SourceCodeMap)  {
         sourceCodeMap.lookupFileInfo(methodKey)
       }
     }
+  }
+  def patchMethod(fileInfo: FileInfo, methodKey: LocalMethodKey,
+    commentsDiff : Map[Int, List[CommentDiff]]) : Option[(String,String)] = { //TODO:smeier refactor this method to already have file
 
-    fileInfo match {
-      case Some(fileInfo) => {
-        // Patch the file
-        Logger.debug(s"Method is in the file ${fileInfo.filePathInRepo}")
+    // Patch the file
+    Logger.debug(s"Method is in the file ${fileInfo.filePathInRepo}")
 
-        val patch = ClassParser.parseAndPatchClassFile(methodKey,
-          fileInfo, commentsDiff)
+    val patch = ClassParser.parseAndPatchClassFile(methodKey,
+      fileInfo, commentsDiff)
 
-        patch match {
-          case Some(patchText) => {
-            require(! (fileInfo == null))
-            require(! (fileInfo.filePathInRepo == null))
-            require(! (patchText == null))
+    patch match {
+      case Some(patchText) => {
+        require(! (fileInfo == null))
+        require(! (fileInfo.filePathInRepo == null))
+        require(! (patchText == null))
 
-            Some((patchText, fileInfo.filePathInRepo))
-          }
-          case None => None
-        }
+        Some((patchText, fileInfo.filePathInRepo))
       }
       case None => None
     }
@@ -99,7 +92,7 @@ class SrcFinder(sourceCodeMap : SourceCodeMap)  {
                   val fileContent =
                     ClassParser.convertStreamToString(inputStream)
 
-                  val fileInfo = FileInfo(methodKey.repoUrl,
+                  val fileInfo = RepoFileInfo(methodKey.repoUrl,
                     methodKey.commitId,
                     methodKey.declaringFile,
                     filePath,

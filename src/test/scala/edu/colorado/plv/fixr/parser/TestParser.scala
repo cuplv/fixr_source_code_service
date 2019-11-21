@@ -4,7 +4,7 @@ import org.scalatest._
 import java.io.File
 import java.nio.file.Files
 
-import edu.colorado.plv.fixr.storage.{MethodKey, MemoryMap, FileInfo}
+import edu.colorado.plv.fixr.storage.{FileInfo, MemoryMap, MethodKey, RepoFileInfo}
 
 class TestParser extends FlatSpec with Matchers with BeforeAndAfter {
 
@@ -66,7 +66,7 @@ class TestParser extends FlatSpec with Matchers with BeforeAndAfter {
     sourceCodeMap.clear()
 
     val fileContent = new String(Files.readAllBytes(dstFile.toPath()))
-    val fileInfo = FileInfo(githubUrl, commitId,
+    val fileInfo = RepoFileInfo(githubUrl, commitId,
       sourceName,
       dstFile.toPath().toString(),
       fileContent)
