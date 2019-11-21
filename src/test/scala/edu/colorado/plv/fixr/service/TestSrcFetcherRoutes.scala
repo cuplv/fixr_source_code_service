@@ -162,7 +162,7 @@ java.lang.Object value) {
     }
     "patch correctly with provided file" in {
       // Get test file to patch
-      val sourceFile = Source.fromURL(getClass.getResource("/parameterHandler.java")).getLines.mkString("\n")
+      val sourceFile = Source.fromURL(getClass.getResource("/ParameterHandler.java")).getLines.mkString("\n")
       val sourceFileEncoded = Base64.rfc2045().encodeToString(sourceFile.toArray.map(_.toByte),true)
 
       val methodSrc = MethodSrc("ParameterHandler.java",58,"apply", sourceFileEncoded)
