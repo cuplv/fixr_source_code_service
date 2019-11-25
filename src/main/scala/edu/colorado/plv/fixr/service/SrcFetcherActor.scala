@@ -1,19 +1,13 @@
 package edu.colorado.plv.fixr.service
 
 
-import edu.colorado.plv.fixr.{SrcFinder, Logger}
-import edu.colorado.plv.fixr.storage.{MethodKey,MemoryMap}
-import edu.colorado.plv.fixr.parser.{CommentDiff}
-
+import edu.colorado.plv.fixr.{Logger, SrcFinder}
+import edu.colorado.plv.fixr.storage._
+import edu.colorado.plv.fixr.parser.CommentDiff
 import akka.actor.{Actor, ActorLogging, Props}
 
-import java.lang.StringBuilder
-
-import com.google.googlejavaformat.java.{Formatter, JavaFormatterOptions}
-import com.google.googlejavaformat.java.{SnippetFormatter, Replacement}
-import com.google.googlejavaformat.java.SnippetFormatter.SnippetKind
-import com.google.common.collect.ImmutableList
-import com.google.common.collect.Range
+//import akka.http.scaladsl.server.directives.FileInfo
+import akka.parboiled2.util.Base64
 
 import scala.annotation.tailrec
 
@@ -23,6 +17,10 @@ object SrcFetcherActor {
     declaringFile : String,
     methodLine : Int,
     methodName : String)
+  final case class MethodSrc(declaringFile : String,
+    methodLine : Int,
+    methodName : String,
+    fileData : String)
 
   final case class DiffEntry(
     lineNum : Int,
@@ -36,6 +34,8 @@ object SrcFetcherActor {
   )
 
   final case class PatchMethodSrc(methodRef : FindMethodSrc,
+    diffsToApply : List[SourceDiff])
+  final case class PatchMethodFile(methodSrc : MethodSrc,
     diffsToApply : List[SourceDiff])
 
   final case class MethodSrcReply(res : (Int,Set[String]),
@@ -103,11 +103,45 @@ class SrcFetcherActor extends Actor with ActorLogging {
 
               val methodKey = MethodKey(findMethodSrc.githubUrl,
                 findMethodSrc.commitId,
-                findMethodSrc.declaringFile,
+                LocalMethodKey(findMethodSrc.declaringFile,
                 findMethodSrc.methodLine,
-                findMethodSrc.methodName)
+                findMethodSrc.methodName))
+              val patchRes: Option[(String, String)] = finder.retrieveFile(methodKey).flatMap(
+                fileInfo => finder.patchMethod(fileInfo, methodKey.localMethodKey, commentDiffs))
 
-              val patchRes = finder.patchMethod(methodKey, commentDiffs)
+              patchRes match {
+                case Some((patchText, filePath)) =>
+                  // Hack --- should change the message
+                  sender() ! MethodSrcReply(
+                    (0, Set(patchText, filePath)),
+                    "")
+                case None =>
+                  sender() ! MethodSrcReply((-1, Set()),
+                    "Cannot find the source code")
+              }
+            }
+          }
+        }
+      }
+    }
+    case PatchMethodFile(findMethodFile, diffsToApply) => {
+      validateData(findMethodFile) match{
+        case Some(element) => sender() ! element
+        case None => {
+          validateData(diffsToApply) match {
+            case Some(element) => sender() ! element
+            case None => {
+              val commentDiffs = CreatePatchText.processDiffs(diffsToApply)
+
+              Logger.debug(s"Transformed commentDiffs: ${commentDiffs}")
+
+              val methodKey = LocalMethodKey(findMethodFile.declaringFile,
+                findMethodFile.methodLine,
+                findMethodFile.methodName)
+              val sourceFileDecoded : String = Base64.rfc2045().decode(findMethodFile.fileData).map(_.toChar).mkString
+              val fileInfo = NoCacheFileInfo(findMethodFile.declaringFile, sourceFileDecoded)
+
+              val patchRes = finder.patchMethod(fileInfo, methodKey, commentDiffs)
 
               patchRes match {
                 case Some((patchText, filePath)) =>
@@ -184,6 +218,13 @@ class SrcFetcherActor extends Actor with ActorLogging {
       case _ => Some(MethodSrcReply((-1,Set()), "Wrong format for findMethodSrc"))
     }
   }
+  private def validateData(methodSrc : MethodSrc) : Option[MethodSrcReply] = {
+    methodSrc match {
+      case MethodSrc(declaringFile, methodLine, methodName, fileData) =>
+        validateData(declaringFile, methodLine, methodName, fileData)
+      case _ => Some(MethodSrcReply((-1,Set()), "Wrong format for findMethodSrc"))
+    }
+  }
 
   private def validateData(githubUrl : String,
     commitId : String,
@@ -196,19 +237,31 @@ class SrcFetcherActor extends Actor with ActorLogging {
           commitId match {
             case "" => Some(MethodSrcReply((-1,Set()), "Empty commit id"))
             case _ =>
-              declaringFile match {
-                case "" => Some(MethodSrcReply((-1,Set()), "Empty declaring file"))
-                case _ =>
-                  methodName match {
-                    case "" => Some(MethodSrcReply((-1,Set()), "Empty method name"))
-                    case _ => if (methodLine <= 0)
-                      Some(MethodSrcReply((-1,Set()), "Negative method line"))
-                    else
-                      None
-                  }
-              }
+              validateData(declaringFile, methodLine, methodName)
           }
       }
+  }
+  private def validateData(declaringFile : String, methodLine : Int,
+                           methodName : String, fileData:String): Option[MethodSrcReply] ={
+    fileData match {
+      case "" => Some(MethodSrcReply((-1,Set()), "Empty fileData"))
+      case _ => validateData(declaringFile, methodLine, methodName)
+    }
+  }
+
+  private def validateData(declaringFile: String,
+                           methodLine: Int, methodName: String) : Option[MethodSrcReply] = {
+    declaringFile match {
+      case "" => Some(MethodSrcReply((-1, Set()), "Empty declaring file"))
+      case _ =>
+        methodName match {
+          case "" => Some(MethodSrcReply((-1, Set()), "Empty method name"))
+          case _ => if (methodLine <= 0)
+            Some(MethodSrcReply((-1, Set()), "Negative method line"))
+          else
+            None
+        }
+    }
   }
 
   private def validateData(diffsToApply : List[SourceDiff]) :

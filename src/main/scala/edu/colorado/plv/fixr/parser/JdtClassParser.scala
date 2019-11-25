@@ -5,17 +5,9 @@
 package edu.colorado.plv.fixr.parser
 
 import scala.io.Source
-import java.io.{BufferedReader, FileReader}
-import org.eclipse.jdt.core.dom._
-import org.eclipse.jdt.core.compiler.IProblem
-
 import java.io.File
-import org.eclipse.jdt.core.dom.{ITypeBinding, ASTVisitor,
-  Expression, ImportDeclaration}
+import org.eclipse.jdt.core.dom.{ASTVisitor}
 import org.eclipse.jdt.core.dom._
-import scala.collection.JavaConversions._
-
-import edu.colorado.plv.fixr.storage.SourceCodeMap
 import edu.colorado.plv.fixr.storage.{MethodKey, SourceCodeMap}
 import edu.colorado.plv.fixr.Logger
 
@@ -55,7 +47,7 @@ class MyVisitor(sourceCodeMap : SourceCodeMap,
             s"\tSource end: $sourceEnd"
           )
 
-          sourceCodeMap.insertMethod(new MethodKey(gitHubUrl,
+          sourceCodeMap.insertMethod(MethodKey(gitHubUrl,
             "",
             fileName,
             startLine, simpleName),

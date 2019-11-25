@@ -1,18 +1,52 @@
 package edu.colorado.plv.fixr.storage
 
+object MethodKey {
+
+  def apply(repoUrl:String, commitId: String, declaringFile : String, startLine:Int, methodName:String): MethodKey =
+    MethodKey(repoUrl,commitId,LocalMethodKey(declaringFile, startLine, methodName))
+}
+
 case class MethodKey(
   repoUrl : String,
   commitId : String,
+  localMethodKey: LocalMethodKey) {
+    def declaringFile = localMethodKey.declaringFile
+    def startLine = localMethodKey.startLine
+    def methodName = localMethodKey.methodName
+  }
+case class LocalMethodKey(
   declaringFile : String,
   startLine : Int,
   methodName : String)
 
-case class FileInfo(
+abstract class FileInfo{
+  def filePathInRepo :String
+  def declaringFile : String
+  def fileContent : String
+}
+
+/**
+  * FileInfo used when caching is desired
+  * caching is used to avoid re-downloading github repositories
+  */
+case class RepoFileInfo(
   repoUrl : String,
   commitId : String,
-  declaringFile : String,
-  filePathInRepo : String,
-  fileContent : String)
+  declaringFile_ : String,
+  filePathInRepo_ : String,
+  fileContent_ : String) extends FileInfo {
+  override def filePathInRepo : String = filePathInRepo_
+  override def declaringFile = declaringFile_
+  override def fileContent = fileContent_
+}
+
+case class NoCacheFileInfo(
+  declaringFile_ : String,
+  fileContent_ : String) extends FileInfo{
+  override def filePathInRepo() : String = declaringFile_
+  override def declaringFile() : String = declaringFile_
+  override def fileContent: String = fileContent_
+}
 
 /**
   * Defines the interface to the storage used to save the extracted

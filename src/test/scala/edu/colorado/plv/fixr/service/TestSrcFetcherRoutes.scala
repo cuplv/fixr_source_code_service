@@ -5,16 +5,14 @@ import akka.http.scaladsl.marshalling.Marshal
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import akka.http.scaladsl.testkit.RouteTestTimeout
-import akka.util.Timeout
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.{Matchers, WordSpec}
-import scala.concurrent.duration._
+import akka.parboiled2.util.Base64
 
-import edu.colorado.plv.fixr.service.SrcFetcherActor.{
-  FindMethodSrc,
-  SourceDiff, DiffEntry, PatchMethodSrc,
-  MethodSrcReply
-}
+import scala.concurrent.duration._
+import edu.colorado.plv.fixr.service.SrcFetcherActor._
+
+import scala.io.Source
 
 class TestSrcFetcherRoutes
     extends WordSpec
@@ -158,8 +156,47 @@ java.lang.Object value) {
         status should ===(StatusCodes.OK)
         contentType should ===(ContentTypes.`application/json`)
         responseAs[MethodSrcReply].res._1 should ===(expectedRes.res._1)
-        // Useful for debug --- not in the test
-        // (println (responseAs[MethodSrcReply].res._2)) should be (())
+        (responseAs[MethodSrcReply].res._2 ==(expectedRes.res._2)) should be (true)
+        responseAs[MethodSrcReply] should be (expectedRes)
+      }
+    }
+    "patch correctly with provided file" in {
+      // Get test file to patch
+      val sourceFile = Source.fromURL(getClass.getResource("/ParameterHandler.java")).getLines.mkString("\n")
+      val sourceFileEncoded = Base64.rfc2045().encodeToString(sourceFile.toArray.map(_.toByte),true)
+
+      val methodSrc = MethodSrc("ParameterHandler.java",58,"apply", sourceFileEncoded)
+
+      val diffsToApply =
+        List(SourceDiff("+",
+          DiffEntry(60, "read", "banana"),
+          List(DiffEntry(0, "exit", ""))
+        ))
+      val expectedPatch = """@java.lang.Override
+void apply(retrofit2.RequestBuilder builder, @javax.annotation.Nullable
+java.lang.Object value) {
+    retrofit2.Utils.checkNotNull(value, "@Url parameter is null.");
+    /* [0] After this method method call (read)
+    You should invoke the following methods:
+    banana
+     */
+    builder.setRelativeUrl(value);
+    // [0] The change should end here (before calling the method exit)
+}"""
+      val pathInGit = "ParameterHandler.java"
+      val expectedRes = MethodSrcReply(
+        (0,Set(expectedPatch,pathInGit)),
+        "")
+
+      val patchMethodSrc = PatchMethodFile(methodSrc, diffsToApply)
+      val entity = Marshal(patchMethodSrc).to[MessageEntity].futureValue
+
+      val request = Post(uri = "/patch_with_file").withEntity(entity)
+
+      request ~> routes ~> check {
+        status should ===(StatusCodes.OK)
+        contentType should ===(ContentTypes.`application/json`)
+        responseAs[MethodSrcReply].res._1 should ===(expectedRes.res._1)
         (responseAs[MethodSrcReply].res._2 ==(expectedRes.res._2)) should be (true)
         responseAs[MethodSrcReply] should be (expectedRes)
       }

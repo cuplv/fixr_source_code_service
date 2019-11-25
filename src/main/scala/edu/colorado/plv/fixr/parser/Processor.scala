@@ -1,15 +1,13 @@
 package edu.colorado.plv.fixr.parser
 
 import spoon.processing.AbstractProcessor
-import spoon.reflect.declaration.{CtConstructor, CtMethod, CtExecutable}
-import spoon.reflect.cu.SourcePosition
+import spoon.reflect.declaration.{CtConstructor, CtExecutable, CtMethod}
 import spoon.reflect.factory.Factory
-
 import edu.colorado.plv.fixr.Logger
-import edu.colorado.plv.fixr.storage.{MethodKey, SourceCodeMap, FileInfo}
+import edu.colorado.plv.fixr.storage.{FileInfo, MethodKey, RepoFileInfo, SourceCodeMap}
 
 
-class MethodProcessor(gitHubUrl : String, sourceCodeMap : SourceCodeMap,
+class MethodProcessor(sourceCodeMap : SourceCodeMap,
   fileInfo : FileInfo, factory : Factory)
     extends AbstractProcessor[CtMethod[_]] {
 
@@ -17,12 +15,12 @@ class MethodProcessor(gitHubUrl : String, sourceCodeMap : SourceCodeMap,
     * Method called to process a single CtMethod node in the AST
     */
   def process(method_decl : CtMethod[_]) : Unit = {
-    CtExecutableProcessor.process(gitHubUrl, sourceCodeMap,
+    CtExecutableProcessor.process(sourceCodeMap,
       method_decl, fileInfo, factory)
   }
 }
 
-class ConstructorProcessor(gitHubUrl: String, sourceCodeMap : SourceCodeMap,
+class ConstructorProcessor(sourceCodeMap : SourceCodeMap,
   fileInfo : FileInfo, factory : Factory)
     extends AbstractProcessor[CtConstructor[_]] {
 
@@ -30,7 +28,7 @@ class ConstructorProcessor(gitHubUrl: String, sourceCodeMap : SourceCodeMap,
     * Method called to process a single CtConstructor node in the AST
     */
   def process(method_decl : CtConstructor[_]) : Unit = {
-    CtExecutableProcessor.process(gitHubUrl, sourceCodeMap,
+    CtExecutableProcessor.process(sourceCodeMap,
       method_decl, fileInfo, factory)
   }
 }
@@ -40,7 +38,7 @@ object CtExecutableProcessor {
   /**
     * Helper method used to process a CtExecutable node.
     */
-  def process(gitHubUrl : String, sourceCodeMap : SourceCodeMap,
+  def process(sourceCodeMap : SourceCodeMap,
     executable_decl : CtExecutable[_], fileInfo : FileInfo,
     factory : Factory) = {
     var simpleName = executable_decl.getSimpleName
@@ -69,11 +67,16 @@ object CtExecutableProcessor {
             s"\tSource start: $sourceStart\n" +
             s"\tSource end: $sourceEnd"
           )
+          fileInfo match{
+            case fileInfo:RepoFileInfo => {
+              sourceCodeMap.insertMethod(MethodKey(fileInfo.repoUrl,
+                fileInfo.commitId,
+                fileName, startLine, simpleName),
+                methodText)
+            }
+            case _ => // Don't cache files not associated with repo
+          }
 
-          sourceCodeMap.insertMethod(new MethodKey(gitHubUrl,
-            fileInfo.commitId,
-            fileName, startLine, simpleName),
-            methodText)
         }
         case _ => {
           Logger.warn(s"Cannot extract text for method method: $simpleName\n" +
