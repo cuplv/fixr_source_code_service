@@ -150,13 +150,15 @@ object ClassParser {
             diffsAtLine.forEach( commentDiff => {
               Logger.debug(s"O-line diff entry: ${commentDiff}")
 
-              if (commentDiff.isMultiLine) {
+              if (! commentDiff.isEnd) {
+                Logger.debug(s"Inserting at the begin")
                 val body = methodDecl.getBody()
                 val comment = getComment(factory, commentDiff)
                 body.insertBegin(comment)
               } else {
                 val body = methodDecl.getBody()
                 val comment = getComment(factory, commentDiff)
+                Logger.debug(s"Inserting at the end")
                 body.insertEnd(comment)
               }
             })

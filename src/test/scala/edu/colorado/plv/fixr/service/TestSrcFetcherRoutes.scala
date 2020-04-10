@@ -136,12 +136,16 @@ class TestSrcFetcherRoutes
 void apply(retrofit2.RequestBuilder builder, @javax.annotation.Nullable
 java.lang.Object value) {
     retrofit2.Utils.checkNotNull(value, "@Url parameter is null.");
-    /* [0] After this method method call (read)
+    /* [Patch start - id 0] After this method method call:
+     read
+
     You should invoke the following methods:
     banana
      */
     builder.setRelativeUrl(value);
-    // [0] The change should end here (before calling the method exit)
+    /* [Patch end - id 0] before calling the method:
+     exit
+     */
 }"""
       val pathInGit = "retrofit/src/main/java/retrofit2/ParameterHandler.java"
       val expectedRes = MethodSrcReply(
@@ -176,12 +180,16 @@ java.lang.Object value) {
 void apply(retrofit2.RequestBuilder builder, @javax.annotation.Nullable
 java.lang.Object value) {
     retrofit2.Utils.checkNotNull(value, "@Url parameter is null.");
-    /* [0] After this method method call (read)
+    /* [Patch start - id 0] After this method method call:
+     read
+
     You should invoke the following methods:
     banana
      */
     builder.setRelativeUrl(value);
-    // [0] The change should end here (before calling the method exit)
+    /* [Patch end - id 0] before calling the method:
+     exit
+     */
 }"""
       val pathInGit = "ParameterHandler.java"
       val expectedRes = MethodSrcReply(

@@ -285,18 +285,18 @@ object CreatePatchText {
       val action = if (isAdd) "invoke" else "remove"
       val diffText =
         if (isEntry) {
-          val entryName = s"[${sourceDiffNum}] After this method method call (${diffEntry.entryName})"
-          val changeExplanation = s"You should ${action} the following methods:\n${diffEntry.what}"
+          val entryName = s"[Patch start - id ${sourceDiffNum}] After this method method call:\n ${diffEntry.entryName}\n"
+          val changeExplanation = s"You should ${action} the following methods:\n${diffEntry.what}\n"
           s"${entryName}\n${changeExplanation}"
         } else {
-          s"[${sourceDiffNum}] The change should end here (before calling the method ${diffEntry.entryName})"
+          s"[Patch end - id ${sourceDiffNum}] before calling the method:\n ${diffEntry.entryName}\n"
         }
 
 
       val commentDiff = CommentDiff(sourceDiffNum,
         diffEntry.lineNum,
         diffText,
-        isAdd, isEntry)
+        isAdd, true, !isEntry)
 
       val res = lineToDiffs.get(diffEntry.lineNum)
       res match {
