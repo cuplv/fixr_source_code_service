@@ -5,6 +5,7 @@ final case class CommentDiff(
   lineNum : Int,
   diffText : String,
   isAdd : Boolean,
-  isMultiLine : Boolean
+  isMultiLine : Boolean,
+  isEnd : Boolean
 )
 
